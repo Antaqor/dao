@@ -30,7 +30,7 @@ const HomePage = () => {
                                 className="w-28 h-28 rounded-full shadow-md mb-4"
                             />
                             <p className="text-2xl font-semibold text-gray-800 mb-2">
-                                Welcome, {session.user?.name}!
+                                Welcome, {session.user?.name?.replace(/'/g, "&apos;")}!
                             </p>
                             <p className="text-gray-600">{session.user?.email}</p>
                             <button
@@ -43,7 +43,9 @@ const HomePage = () => {
                     </>
                 ) : (
                     <div className="flex flex-col items-center mt-20 text-center w-full max-w-screen-lg">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-6">Welcome to Vone DAO</h1>
+                        <h1 className="text-4xl font-bold text-gray-900 mb-6">
+                            Welcome to Vone DAO
+                        </h1>
                         <p className="text-lg text-gray-700 max-w-2xl mb-8">
                             Vone DAO is an innovative decentralized community driven by a vision of collaboration, technology,
                             and empowerment. Join us to shape the future together in a sophisticated, forward-thinking environment.
