@@ -46,10 +46,6 @@ const HomePage = () => {
                         <h1 className="text-4xl font-bold text-gray-900 mb-6">
                             Welcome to Vone DAO
                         </h1>
-                        <p className="text-lg text-gray-700 max-w-2xl mb-8">
-                            Vone DAO is an innovative decentralized community driven by a vision of collaboration, technology,
-                            and empowerment. Join us to shape the future together in a sophisticated, forward-thinking environment.
-                        </p>
                         <button
                             onClick={() => signIn("google")}
                             className="mt-8 text-white bg-black px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition"
