@@ -30,7 +30,7 @@ const HomePage = () => {
                                 className="w-28 h-28 rounded-full shadow-md mb-4"
                             />
                             <p className="text-2xl font-semibold text-gray-800 mb-2">
-                                Welcome, {session.user?.name?.replace(/'/g, "&apos;")}!
+                                Welcome, {session.user?.name?.replace(/'/g, "&#39;")}!
                             </p>
                             <p className="text-gray-600">{session.user?.email}</p>
                             <button
