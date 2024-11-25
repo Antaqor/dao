@@ -33,7 +33,7 @@ const HomePage = () => {
                                 className="rounded-full shadow-md mb-4"
                             />
                             <p className="text-2xl font-semibold text-gray-800 mb-2">
-                                Welcome, {session.user?.name?.replace(/'/g, "&apos;")}!
+                                Тавтай морил, {session.user?.name?.replace(/'/g, "&apos;")}!
                             </p>
                             <p className="text-gray-600">{session.user?.email}</p>
                             <button
@@ -47,7 +47,7 @@ const HomePage = () => {
                 ) : (
                     <div className="flex flex-col items-center mt-20 text-center w-full max-w-screen-lg">
                         <h1 className="text-4xl font-bold text-gray-900 mb-6">
-                            Welcome to Vone DAO
+                            Тавтай морил Vone DAO
                         </h1>
                         <button
                             onClick={() => signIn("google")}
