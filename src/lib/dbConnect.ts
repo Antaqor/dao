@@ -7,32 +7,19 @@ if (!MONGODB_URI) {
     throw new Error('Please define the MONGODB_URI environment variable in .env');
 }
 
-// Extend the global object to add the `_mongooseCache` property
-declare global {
-    // This allows us to add a custom property to `global`
-    // Use `let` instead of `var` for better scoping
-    var _mongooseCache: {
-        conn: typeof mongoose | null;
-        promise: Promise<typeof mongoose> | null;
-    };
-}
-
-// Use `const` instead of `let` for non-reassigned variables
+// Use `globalThis` to reference the augmented global property
 const cached = global._mongooseCache || (global._mongooseCache = { conn: null, promise: null });
 
 async function dbConnect(): Promise<typeof mongoose> {
-    // Return cached connection if available
     if (cached.conn) {
         return cached.conn;
     }
 
-    // Initialize connection promise if not already done
     if (!cached.promise) {
         const opts: ConnectOptions = {
             bufferCommands: false,
         };
 
-        // Establish a new connection and cache the promise
         cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
             console.log('Successfully connected to MongoDB!');
             return mongooseInstance;

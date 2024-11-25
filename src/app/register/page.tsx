@@ -4,6 +4,11 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
+// Define a type for the expected error response
+interface ErrorResponse {
+    error: string; // Adjust this according to your API's error structure
+}
+
 const Register = () => {
     const [username, setUsername] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -26,10 +31,10 @@ const Register = () => {
                 router.push('/login'); // Redirect to login page
             }
         } catch (error) {
-            const err = error as AxiosError; // Type the error as AxiosError
+            const err = error as AxiosError<ErrorResponse>; // Explicitly type the Axios error
             if (err.response && err.response.data) {
                 console.error('Error registering user:', err.response.data);
-                alert('Registration failed: ' + (err.response.data as any).error);
+                alert('Registration failed: ' + err.response.data.error);
             } else {
                 console.error('Unexpected error:', error);
                 alert('Registration failed: An unexpected error occurred. Please try again.');
