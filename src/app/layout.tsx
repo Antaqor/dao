@@ -1,18 +1,24 @@
 "use client";
-
-import { SessionProvider } from "next-auth/react";
 import React from 'react';
+import { SessionProvider } from "next-auth/react";
+import Header from './components/Header';
+import Footer from './components/Footer';
+import '../app/globals.css';
 
 export default function RootLayout({
                                        children,
                                    }: {
     children: React.ReactNode;
-}) {
+}): JSX.Element {
     return (
         <html lang="en">
-        <body>
+        <body className="bg-gray-100 flex flex-col min-h-screen">
         <SessionProvider>
-            {children}
+            <Header /> {/* Header added globally */}
+            <main className="flex-grow w-full">
+                {children} {/* Children will be replaced by the content of the individual pages */}
+            </main>
+            <Footer /> {/* Footer added globally */}
         </SessionProvider>
         </body>
         </html>
