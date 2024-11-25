@@ -8,16 +8,19 @@ if (!MONGODB_URI) {
 }
 
 // Declare a global object to manage the cached connection
+interface MongooseCache {
+    conn: typeof mongoose | null;
+    promise: Promise<typeof mongoose> | null;
+}
+
+// Extend globalThis to include the _mongooseCache property
 declare global {
-    // Avoid naming collision, use a unique identifier
-    var _mongooseCache: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
+    // Add the property to the global scope
+    var _mongooseCache: MongooseCache | undefined;
 }
 
-let cached = global._mongooseCache;
-
-if (!cached) {
-    cached = global._mongooseCache = { conn: null, promise: null };
-}
+const cached: MongooseCache = global._mongooseCache || { conn: null, promise: null };
+global._mongooseCache = cached;
 
 async function dbConnect(): Promise<typeof mongoose> {
     if (cached.conn) {

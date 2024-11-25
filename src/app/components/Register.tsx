@@ -1,24 +1,35 @@
+"use client";
 import React, { useState } from 'react';
 
+interface RegisterResponse {
+    message?: string;
+    error?: string;
+}
+
 const Register = () => {
-    const [username, setUsername] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [password, setPassword] = useState('');
+    const [username, setUsername] = useState<string>('');
+    const [phoneNumber, setPhoneNumber] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
 
     const handleRegister = async () => {
-        const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, phoneNumber, password }),
-        });
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, phoneNumber, password }),
+            });
 
-        const data = await response.json();
-        if (response.ok) {
-            alert(data.message);
-        } else {
-            alert(data.error);
+            const data: RegisterResponse = await response.json();
+            if (response.ok) {
+                alert(data.message);
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            alert('Registration failed. Please try again.');
         }
     };
 
