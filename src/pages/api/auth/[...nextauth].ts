@@ -2,7 +2,7 @@
 
 import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 // Define the User type explicitly (optional, since it's now in the global types)
 interface User {
@@ -35,11 +35,16 @@ export const authOptions: AuthOptions = {
                         console.error('Login failed:', response.data?.error || 'Unknown error');
                         return null; // Login failed
                     }
-                } catch (error: any) {
-                    console.error('Error during authorization:', error?.response?.data?.error || error.message);
+                } catch (error) {
+                    const axiosError = error as AxiosError<{ error: string }>; // Properly type the error as AxiosError
+                    if (axiosError.response?.data?.error) {
+                        console.error('Authorization error:', axiosError.response.data.error);
+                    } else {
+                        console.error('Unexpected error during authorization:', axiosError.message);
+                    }
                     return null; // Login failed
                 }
-            }
+            },
         }),
     ],
     secret: process.env.NEXTAUTH_SECRET,
@@ -59,16 +64,16 @@ export const authOptions: AuthOptions = {
                     ...(session.user || {}),
                     id: token.id as string,
                     email: token.email as string,
-                } as User;  // Cast session.user as User type
+                } as User; // Cast session.user as User type
             }
             return session;
         },
     },
     pages: {
-        signIn: '/auth/login',  // Redirect to a custom login page
-        error: '/auth/error',   // Optional custom error page
+        signIn: '/auth/login', // Redirect to a custom login page
+        error: '/auth/error',  // Optional custom error page
     },
-    debug: process.env.NODE_ENV === 'development',  // Enable debug logs in development
+    debug: process.env.NODE_ENV === 'development', // Enable debug logs in development
 };
 
 export default NextAuth(authOptions);
