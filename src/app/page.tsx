@@ -2,6 +2,7 @@
 import React from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Newsfeed from './components/Newsfeed';
+import Image from 'next/image';
 
 const HomePage = () => {
     const { data: session, status } = useSession();
@@ -24,13 +25,15 @@ const HomePage = () => {
 
                         {/* User Profile Section */}
                         <div className="flex flex-col items-center mt-10 bg-white p-6 rounded-md shadow-md w-full max-w-md">
-                            <img
+                            <Image
                                 src={session.user?.image || "/default-avatar.png"}
                                 alt="Profile Picture"
-                                className="w-28 h-28 rounded-full shadow-md mb-4"
+                                width={112}
+                                height={112}
+                                className="rounded-full shadow-md mb-4"
                             />
                             <p className="text-2xl font-semibold text-gray-800 mb-2">
-                                Welcome, {session.user?.name?.replace(/'/g, "&#39;")}!
+                                Welcome, {session.user?.name?.replace(/'/g, "&apos;")}!
                             </p>
                             <p className="text-gray-600">{session.user?.email}</p>
                             <button

@@ -1,8 +1,10 @@
-// This example uses React and Tailwind CSS for rapid prototyping of a modern "Newsfeed" inspired by Instagram and X (Twitter)
+// src/app/components/Newsfeed.tsx
 
+"use client";
 import React, { useEffect, useState } from 'react';
 import { AiOutlineHeart, AiOutlineComment, AiOutlineSend } from 'react-icons/ai';
 import { FaRegBookmark } from 'react-icons/fa';
+import Image from 'next/image';
 
 // Define TypeScript types for Post and Comment
 interface Comment {
@@ -88,12 +90,12 @@ const Newsfeed: React.FC = () => {
             <div className="w-full max-w-xl">
                 {/* Write Something Section */}
                 <div className="bg-white shadow-md rounded-lg p-4 mb-8">
-          <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Write something..."
-              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+                    <textarea
+                        value={newPost}
+                        onChange={(e) => setNewPost(e.target.value)}
+                        placeholder="Write something..."
+                        className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                     <input
                         type="text"
                         value={newPostImage}
@@ -113,15 +115,23 @@ const Newsfeed: React.FC = () => {
                     <div key={post.id} className="bg-white shadow-md rounded-lg mb-8">
                         {/* Header */}
                         <div className="flex items-center p-4">
-                            <img
+                            <Image
                                 src={post.userImage}
                                 alt="user profile"
-                                className="w-10 h-10 rounded-full object-cover"
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
                             />
                             <span className="ml-4 font-semibold">{post.username}</span>
                         </div>
                         {/* Post Image */}
-                        <img src={post.postImage} alt="post" className="w-full object-cover" />
+                        <Image
+                            src={post.postImage}
+                            alt="post"
+                            width={500}
+                            height={500}
+                            className="w-full object-cover"
+                        />
                         {/* Buttons */}
                         <div className="flex justify-between items-center px-4 pt-4">
                             <div className="flex space-x-4">

@@ -1,12 +1,14 @@
+// src/app/login/page.tsx
+
 "use client";
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation'; // Use next/navigation for new router handling
 
 const LoginPage = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [username, setUsername] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -16,7 +18,7 @@ const LoginPage = () => {
         try {
             const result = await signIn('credentials', {
                 redirect: false,
-                username, // This might need to be changed to 'email' based on your backend expectations
+                username,
                 password,
             });
 
