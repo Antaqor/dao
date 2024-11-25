@@ -7,20 +7,17 @@ if (!MONGODB_URI) {
     throw new Error('Please define the MONGODB_URI environment variable in .env');
 }
 
-// Declare a global object to manage the cached connection
-interface MongooseCache {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
-}
-
-// Extend globalThis to include the _mongooseCache property
+// Extend the global object to add the `_mongooseCache` property
 declare global {
-    let _mongooseCache: MongooseCache | undefined;
+    // This allows us to add a custom property to `global`
+    var _mongooseCache: {
+        conn: typeof mongoose | null;
+        promise: Promise<typeof mongoose> | null;
+    };
 }
 
-// Use `let` instead of `var`
-let cached: MongooseCache = global._mongooseCache || { conn: null, promise: null };
-global._mongooseCache = cached;
+// Use `let` or `const` instead of `var`
+let cached = global._mongooseCache || (global._mongooseCache = { conn: null, promise: null });
 
 async function dbConnect(): Promise<typeof mongoose> {
     if (cached.conn) {
