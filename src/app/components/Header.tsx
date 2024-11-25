@@ -1,16 +1,12 @@
-"use client";
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import logo from '../img/vone.svg'
+import logo from '../img/vone.svg';
+import Image from 'next/image';
+
 const Header: React.FC = () => {
     const router = useRouter();
     const { data: session, status } = useSession();
-
-    // Handle navigation to login page
-    const handleLoginClick = () => {
-        router.push('/login');
-    };
 
     // Handle navigation to register page
     const handleRegisterClick = () => {
@@ -23,7 +19,9 @@ const Header: React.FC = () => {
                 {/* Logo Section */}
                 <div className="text-xl font-bold flex items-center gap-2 cursor-pointer"
                      onClick={() => router.push('/')}>
-                    <img src={logo.src} alt="Vone Logo" className="h-10 w-10 object-contain"/>
+                    <div className="text-xl font-bold flex items-center gap-2 cursor-pointer">
+                        <Image src={logo} alt="Vone Logo" className="h-10 w-10 object-contain"/>
+                    </div>
                 </div>
 
                 {/* Navigation Links */}
@@ -50,7 +48,7 @@ const Header: React.FC = () => {
                     ) : (
                         <>
                             <button
-                                onClick={handleLoginClick}
+                                onClick={() => signIn()}
                                 className="bg-gray-800 text-white font-semibold py-2 px-6 border border-gray-700 transition-all duration-200 hover:bg-gray-700 hover:text-blue-400"
                             >
                                 Нэвтрэх
