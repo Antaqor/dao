@@ -15,11 +15,11 @@ interface MongooseCache {
 
 // Extend globalThis to include the _mongooseCache property
 declare global {
-    // Add the property to the global scope
-    var _mongooseCache: MongooseCache | undefined;
+    let _mongooseCache: MongooseCache | undefined;
 }
 
-const cached: MongooseCache = global._mongooseCache || { conn: null, promise: null };
+// Use `let` instead of `var`
+let cached: MongooseCache = global._mongooseCache || { conn: null, promise: null };
 global._mongooseCache = cached;
 
 async function dbConnect(): Promise<typeof mongoose> {
