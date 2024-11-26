@@ -23,7 +23,7 @@ export const authOptions: AuthOptions = {
             async authorize(credentials) {
                 try {
                     // Call your custom backend API for authentication
-                    const response = await axios.post('http://localhost:5001/api/auth/login', {
+                    const response = await axios.post('http://localhost:5000/api/auth/login', {
                         username: credentials?.username,
                         password: credentials?.password,
                     });
