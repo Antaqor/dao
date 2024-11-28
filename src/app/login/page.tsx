@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -24,6 +25,7 @@ const LoginPage = () => {
                 redirect: false,
                 username,
                 password,
+                callbackUrl: `${backendUrl}/api/auth/login`, // Backend login API
             });
 
             console.log('SignIn Result:', result);
@@ -31,9 +33,9 @@ const LoginPage = () => {
             if (result?.error) {
                 console.error('Login failed:', result.error);
                 setError(result.error); // Display error message to the user
-            } else if (result?.ok) {
+            } else if (result?.ok && result.url) {
                 alert('Login successful!');
-                router.push(result.url || '/'); // Use the `url` property to redirect or fallback to home
+                router.push(result.url); // Redirect to the callback URL
             } else {
                 setError('Unexpected login response.');
             }
