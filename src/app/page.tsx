@@ -9,6 +9,9 @@ const HomePage = () => {
     const { data: session, status } = useSession();
     const [loadingSignOut, setLoadingSignOut] = useState(false);
 
+    // Hardcoded backend API URL
+    const backendUrl = 'http://152.42.243.146:5000';
+
     if (status === 'loading') {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -24,7 +27,12 @@ const HomePage = () => {
                     Тавтай морил! Vone DAO
                 </h1>
                 <button
-                    onClick={() => signIn('google')}
+                    onClick={() =>
+                        signIn('credentials', {
+                            redirect: true,
+                            callbackUrl: `${backendUrl}/dashboard`, // Redirect after login
+                        })
+                    }
                     className="mt-8 text-white bg-black px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition"
                 >
                     Sign in with Google
@@ -57,7 +65,7 @@ const HomePage = () => {
                             <button
                                 onClick={async () => {
                                     setLoadingSignOut(true);
-                                    await signOut();
+                                    await signOut({ redirect: true, callbackUrl: `${backendUrl}/login` });
                                     setLoadingSignOut(false);
                                 }}
                                 className={`mt-6 text-white px-4 py-2 rounded-md transition ${

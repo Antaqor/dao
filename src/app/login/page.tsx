@@ -7,42 +7,39 @@ const LoginPage = () => {
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null); // State for displaying error messages
     const router = useRouter();
 
-    // Backend API URL from environment variables
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-
-    if (!backendUrl) {
-        console.error('Environment variable NEXT_PUBLIC_BACKEND_API_URL is missing.');
-    }
+    // Hardcoded backend API URL
+    const backendUrl = 'http://152.42.243.146:5000'; // Replace with your backend IP address
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
+        setError(null); // Clear any previous error messages
 
         try {
-            // Use the backend URL for the login API endpoint
+            // Use the hardcoded backend URL for the login API endpoint
             const result = await signIn('credentials', {
                 redirect: false,
                 username,
                 password,
-                callbackUrl: `${backendUrl}/api/auth/login`, // Backend login API
             });
 
             console.log('SignIn Result:', result);
 
             if (result?.error) {
                 console.error('Login failed:', result.error);
-                alert(`Login failed: ${result.error || 'Unknown error'}`);
+                setError(result.error); // Display error message to the user
             } else if (result?.ok) {
                 alert('Login successful!');
-                router.push('/'); // Redirect to home after successful login
+                router.push(result.url || '/'); // Use the `url` property to redirect or fallback to home
             } else {
-                alert('Unexpected login response.');
+                setError('Unexpected login response.');
             }
         } catch (error) {
             console.error('Unexpected error:', error);
-            alert('Login failed: An unexpected error occurred. Please try again.');
+            setError('An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -53,8 +50,17 @@ const LoginPage = () => {
             <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
                 <h1 className="text-3xl font-bold mb-6 text-center text-gray-900">Login</h1>
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="text-red-600 text-sm mb-4 text-center">
+                            {error} {/* Display error message */}
+                        </div>
+                    )}
                     <div>
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                            htmlFor="username"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                            aria-label="Enter your username"
+                        >
                             Username or Email
                         </label>
                         <input
@@ -67,7 +73,11 @@ const LoginPage = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                            htmlFor="password"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                            aria-label="Enter your password"
+                        >
                             Password
                         </label>
                         <input

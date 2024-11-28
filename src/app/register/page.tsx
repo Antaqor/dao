@@ -18,6 +18,9 @@ const Register = () => {
 
     const router = useRouter();
 
+    // Hardcoded backend API URL
+    const backendUrl = 'http://152.42.243.146:5000';
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError(null); // Clear previous errors
@@ -36,8 +39,8 @@ const Register = () => {
         setLoading(true);
 
         try {
-            // Using the backend URL from the environment variable
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/register`, {
+            // Send POST request to the hardcoded backend API
+            const response = await axios.post(`${backendUrl}/api/auth/register`, {
                 username,
                 phoneNumber,
                 password,
@@ -72,7 +75,11 @@ const Register = () => {
                 )}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                            htmlFor="username"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                            aria-label="Enter your username"
+                        >
                             Нэр
                         </label>
                         <input
@@ -85,7 +92,11 @@ const Register = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                            htmlFor="phoneNumber"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                            aria-label="Enter your phone number"
+                        >
                             Утасны дугаар
                         </label>
                         <input
@@ -98,7 +109,11 @@ const Register = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                            htmlFor="password"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                            aria-label="Enter your password"
+                        >
                             Нууц үг
                         </label>
                         <input
@@ -117,7 +132,7 @@ const Register = () => {
                             loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                         } transition duration-300`}
                     >
-                        {loading ? 'Бүртгүүлж байна...' : 'Үрэгжлүүлэх'}
+                        {loading ? 'Бүртгүүлж байна...' : 'Үргэлжлүүлэх'}
                     </button>
                 </form>
                 <p className="mt-6 text-center text-gray-600">

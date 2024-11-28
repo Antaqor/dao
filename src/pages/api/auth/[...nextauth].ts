@@ -10,6 +10,9 @@ interface User {
     image?: string;
 }
 
+// Hardcoded backend API base URL
+const backendUrl = 'http://152.42.243.146:5000';
+
 export const authOptions: AuthOptions = {
     providers: [
         CredentialsProvider({
@@ -20,18 +23,9 @@ export const authOptions: AuthOptions = {
             },
             async authorize(credentials) {
                 try {
-                    // Ensure backend URL is defined in environment variables
-                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-
-                    if (!backendUrl) {
-                        throw new Error(
-                            'Backend URL is not defined. Please set NEXT_PUBLIC_BACKEND_API_URL in your environment variables.'
-                        );
-                    }
-
-                    // Log the backend URL in development mode for debugging
+                    // Log the backend URL for debugging
                     if (process.env.NODE_ENV === 'development') {
-                        console.debug(`Using backend URL: ${backendUrl}`);
+                        console.debug(`Using hardcoded backend URL: ${backendUrl}`);
                     }
 
                     // Make the API call to the backend for user authentication
