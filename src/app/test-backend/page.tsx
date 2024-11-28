@@ -1,51 +1,42 @@
-'use client';
+"use client";
 
 import React, { useState } from 'react';
 
 const TestBackendPage = () => {
-    const [response, setResponse] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [responseMessage, setResponseMessage] = useState<string | null>(null);
 
-    const testBackend = async () => {
+    const handleTestConnection = async () => {
         try {
-            const res = await fetch('http://152.42.243.146:5000/api/ping', {
-                method: 'GET',
-            }); // Replace with your backend IP or domain
-
+            const res = await fetch('http://152.42.243.146:5000/api/test');
             if (!res.ok) {
-                console.error(`Failed to connect to backend: ${res.statusText}`);
-                return { success: false, message: `Failed to connect to backend: ${res.statusText}` };
+                throw new Error(`Failed to connect to backend: ${res.statusText}`);
             }
 
-            const data = await res.json();
-            setResponse(data.message); // Assuming the backend returns `{ message: 'Pong! Backend is working.' }`
-            setError(null);
-        } catch (err: any) {
-            setResponse(null);
-            setError(err.message || 'Something went wrong');
+            // Define type inline or with an interface
+            const data: { message: string; success: boolean } = await res.json();
+
+            if (data.success) {
+                setResponseMessage(data.message);
+            } else {
+                setResponseMessage('Backend returned failure response.');
+            }
+        } catch (error) {
+            console.error('Error connecting to backend:', error);
+            setResponseMessage('Failed to connect to backend.');
         }
     };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-            <h1 className="text-3xl font-bold mb-6 text-center text-gray-900">Test Backend</h1>
+            <h1 className="text-3xl font-bold mb-4">Test Backend</h1>
             <button
-                onClick={testBackend}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                onClick={handleTestConnection}
+                className="bg-blue-500 text-white px-4 py-2 rounded"
             >
                 Test Connection
             </button>
-
-            {response && (
-                <div className="mt-4 text-green-700">
-                    <p>Response: {response}</p>
-                </div>
-            )}
-
-            {error && (
-                <div className="mt-4 text-red-600">
-                    <p>Error: {error}</p>
-                </div>
+            {responseMessage && (
+                <p className="mt-4 text-green-600">Response: {responseMessage}</p>
             )}
         </div>
     );
