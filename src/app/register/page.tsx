@@ -1,4 +1,5 @@
 "use client";
+
 import { AxiosError } from 'axios'; // Import AxiosError
 import React, { useState } from 'react';
 import axios from 'axios';
@@ -13,14 +14,24 @@ const Register = () => {
     const [username, setUsername] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState<boolean>(false);
 
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
+        // Validate input fields
+        if (!username || !phoneNumber || !password) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        setLoading(true);
+
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/register', {
+            // Using the backend URL from the environment variable
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/register`, {
                 username,
                 phoneNumber,
                 password,
@@ -39,6 +50,8 @@ const Register = () => {
                 console.error('Unexpected error:', error);
                 alert('Registration failed: An unexpected error occurred. Please try again.');
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -88,9 +101,12 @@ const Register = () => {
                     </div>
                     <button
                         type="submit"
-                        className="w-full py-3 rounded-md text-white font-semibold bg-blue-600 hover:bg-blue-700 transition duration-300"
+                        disabled={loading}
+                        className={`w-full py-3 rounded-md text-white font-semibold ${
+                            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                        } transition duration-300`}
                     >
-                        Үрэгжлүүлэх
+                        {loading ? 'Бүртгүүлж байна...' : 'Үрэгжлүүлэх'}
                     </button>
                 </form>
             </div>

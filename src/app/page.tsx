@@ -1,11 +1,13 @@
 "use client";
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Newsfeed from './components/Newsfeed';
 import Image from 'next/image';
 
 const HomePage = () => {
     const { data: session, status } = useSession();
+    const [loadingSignOut, setLoadingSignOut] = useState(false);
 
     if (status === 'loading') {
         return (
@@ -15,10 +17,26 @@ const HomePage = () => {
         );
     }
 
-    return (
-        <div className="bg-gray-100 w-full">
-            <div className="container max-w-screen-lg mx-auto flex flex-col items-center justify-center flex-grow py-12">
-                {session ? (
+    if (status === 'unauthenticated') {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+                <h1 className="text-4xl font-bold text-gray-900 mb-6">
+                    Тавтай морил! Vone DAO
+                </h1>
+                <button
+                    onClick={() => signIn('google')}
+                    className="mt-8 text-white bg-black px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition"
+                >
+                    Sign in with Google
+                </button>
+            </div>
+        );
+    }
+
+    if (status === 'authenticated' && session) {
+        return (
+            <div className="bg-gray-100 w-full">
+                <div className="container max-w-screen-lg mx-auto flex flex-col items-center justify-center flex-grow py-12">
                     <>
                         {/* Newsfeed Section */}
                         <Newsfeed />
@@ -37,27 +55,29 @@ const HomePage = () => {
                             </p>
                             <p className="text-gray-600">{session.user?.email}</p>
                             <button
-                                onClick={() => signOut()}
-                                className="mt-6 text-white bg-red-600 px-4 py-2 rounded-md hover:bg-red-700 transition"
+                                onClick={async () => {
+                                    setLoadingSignOut(true);
+                                    await signOut();
+                                    setLoadingSignOut(false);
+                                }}
+                                className={`mt-6 text-white px-4 py-2 rounded-md transition ${
+                                    loadingSignOut ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
+                                }`}
+                                disabled={loadingSignOut}
                             >
-                                Sign Out
+                                {loadingSignOut ? 'Signing Out...' : 'Sign Out'}
                             </button>
                         </div>
                     </>
-                ) : (
-                    <div className="flex flex-col items-center mt-20 text-center w-full max-w-screen-lg">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-6">
-                            Тавтай морил! Vone DAO
-                        </h1>
-                        <button
-                            onClick={() => signIn("google")}
-                            className="mt-8 text-white bg-black px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition"
-                        >
-                            Get Started with Google
-                        </button>
-                    </div>
-                )}
+                </div>
             </div>
+        );
+    }
+
+    // Handle unexpected errors
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+            <p className="text-xl text-red-600">An error occurred while loading the page. Please try again later.</p>
         </div>
     );
 };

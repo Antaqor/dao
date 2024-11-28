@@ -1,5 +1,3 @@
-// src/pages/api/auth/[...nextauth].ts
-
 import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import axios, { AxiosError } from 'axios';
@@ -22,8 +20,15 @@ export const authOptions: AuthOptions = {
             },
             async authorize(credentials) {
                 try {
-                    // Call your custom backend API for authentication
-                    const response = await axios.post('http://localhost:5000/api/auth/login', {
+                    // Use environment variable for the backend URL to avoid hardcoding
+                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+
+                    if (!backendUrl) {
+                        throw new Error('Backend URL is not defined. Please set NEXT_PUBLIC_BACKEND_API_URL in your environment variables.');
+                    }
+
+                    // Make the API call to the backend for authentication
+                    const response = await axios.post(`${backendUrl}/api/auth/login`, {
                         username: credentials?.username,
                         password: credentials?.password,
                     });

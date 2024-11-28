@@ -14,10 +14,12 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
+            // Update the signIn function call to point to the proper backend endpoint
             const result = await signIn('credentials', {
                 redirect: false,
                 username,
                 password,
+                callbackUrl: process.env.NEXT_PUBLIC_BACKEND_API_URL + '/api/auth/login', // Update with the backend API endpoint
             });
 
             console.log('Result:', result); // Log result to see the structure
