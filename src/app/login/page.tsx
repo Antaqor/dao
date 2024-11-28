@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation'; // Use next/navigation for new router handling
+import { useRouter } from 'next/navigation';
 
 const LoginPage = () => {
     const [username, setUsername] = useState<string>('');
@@ -9,27 +9,34 @@ const LoginPage = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
 
+    // Backend API URL from environment variables
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+
+    if (!backendUrl) {
+        console.error('Environment variable NEXT_PUBLIC_BACKEND_API_URL is missing.');
+    }
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            // Update the signIn function call to point to the proper backend endpoint
+            // Use the backend URL for the login API endpoint
             const result = await signIn('credentials', {
                 redirect: false,
                 username,
                 password,
-                callbackUrl: process.env.NEXT_PUBLIC_BACKEND_API_URL + '/api/auth/login', // Update with the backend API endpoint
+                callbackUrl: `${backendUrl}/api/auth/login`, // Backend login API
             });
 
-            console.log('Result:', result); // Log result to see the structure
+            console.log('SignIn Result:', result);
 
             if (result?.error) {
                 console.error('Login failed:', result.error);
                 alert(`Login failed: ${result.error || 'Unknown error'}`);
             } else if (result?.ok) {
                 alert('Login successful!');
-                router.push('/'); // Redirect to root path after successful login
+                router.push('/'); // Redirect to home after successful login
             } else {
                 alert('Unexpected login response.');
             }
