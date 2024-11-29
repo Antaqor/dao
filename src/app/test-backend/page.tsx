@@ -13,16 +13,19 @@ const TestBackendPage = () => {
             }); // Replace with your backend IP or domain
 
             if (!res.ok) {
-                console.error(`Failed to connect to backend: ${res.statusText}`);
-                return { success: false, message: `Failed to connect to backend: ${res.statusText}` };
+                throw new Error(`Failed to connect to backend: ${res.statusText}`);
             }
 
-            const data = await res.json();
+            const data: { message: string } = await res.json(); // Explicitly type the response
             setResponse(data.message); // Assuming the backend returns `{ message: 'Pong! Backend is working.' }`
             setError(null);
-        } catch (err: any) {
+        } catch (err: unknown) { // Use 'unknown' for better error handling
+            if (err instanceof Error) {
+                setError(err.message); // Extract the message from the Error object
+            } else {
+                setError('An unknown error occurred');
+            }
             setResponse(null);
-            setError(err.message || 'Something went wrong');
         }
     };
 
