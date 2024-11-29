@@ -29,11 +29,10 @@ const LoginPage = () => {
                 throw new Error(errorData.message || 'Login failed.');
             }
 
-            const data = await response.json();
             alert('Login successful!');
             router.push('/dashboard'); // Navigate to dashboard
-        } catch (err: any) {
-            setError(err.message || 'An unexpected error occurred.');
+        } catch (err: unknown) {
+            setError((err as Error).message || 'An unexpected error occurred.');
         } finally {
             setLoading(false);
         }
@@ -90,7 +89,7 @@ const LoginPage = () => {
                     <div className="mt-4 text-red-600 text-sm text-center">{error}</div>
                 )}
                 <p className="mt-4 text-sm text-gray-600 text-center">
-                    Don't have an account?{' '}
+                    Don&apos;t have an account?{' '}
                     <a href="/register" className="text-blue-600 hover:underline">
                         Sign up
                     </a>
