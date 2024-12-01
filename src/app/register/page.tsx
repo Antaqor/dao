@@ -4,6 +4,11 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
+// Define a type for the expected error response
+interface ErrorResponse {
+    error: string; // Adjust this according to your API's error structure
+}
+
 const Register = () => {
     const [username, setUsername] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -28,10 +33,10 @@ const Register = () => {
                 router.push('/login'); // Redirect to login page
             }
         } catch (error) {
-            const err = error as AxiosError; // Type the error as AxiosError
+            const err = error as AxiosError<ErrorResponse>; // Explicitly type the Axios error
             if (err.response && err.response.data) {
                 console.error('Error registering user:', err.response.data);
-                alert('Registration failed: ' + (err.response.data as any).error);
+                alert('Registration failed: ' + err.response.data.error);
             } else {
                 console.error('Unexpected error:', error);
                 alert('Registration failed: An unexpected error occurred. Please try again.');
@@ -46,7 +51,7 @@ const Register = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                            Username
+                            Нэр
                         </label>
                         <input
                             id="username"
@@ -59,7 +64,7 @@ const Register = () => {
                     </div>
                     <div>
                         <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                            Phone Number
+                            Утасны дугаар
                         </label>
                         <input
                             id="phoneNumber"
@@ -85,12 +90,12 @@ const Register = () => {
                     </div>
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                            Password
+                            Нууц үг
                         </label>
                         <input
                             id="password"
                             type="password"
-                            placeholder="Password"
+                            placeholder="Нууц үг"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"
@@ -100,7 +105,7 @@ const Register = () => {
                         type="submit"
                         className="w-full py-3 rounded-md text-white font-semibold bg-blue-600 hover:bg-blue-700 transition duration-300"
                     >
-                        Register
+                        Үрэгжлүүлэх
                     </button>
                 </form>
             </div>
