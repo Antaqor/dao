@@ -1,8 +1,10 @@
+// src/pages/api/auth/[...nextauth].ts
+
 import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
-// Define a User interface explicitly for better type safety
+// Define the User type explicitly (optional, since it's now in the global types)
 interface User {
     id: string;
     email: string;
@@ -10,80 +12,63 @@ interface User {
     image?: string;
 }
 
-// Hardcoded backend API base URL
-const backendUrl = 'http://152.42.243.146:5000';
-
 export const authOptions: AuthOptions = {
     providers: [
         CredentialsProvider({
-            name: 'Credentials', // Name shown in the login form
+            name: 'Credentials',
             credentials: {
                 username: { label: 'Username', type: 'text', placeholder: 'Username' },
                 password: { label: 'Password', type: 'password', placeholder: 'Password' },
             },
             async authorize(credentials) {
                 try {
-                    // Log the backend URL for debugging
-                    if (process.env.NODE_ENV === 'development') {
-                        console.debug(`Using hardcoded backend URL: ${backendUrl}`);
-                    }
-
-                    // Make the API call to the backend for user authentication
-                    const response = await axios.post(`${backendUrl}/api/auth/login`, {
+                    // Call your custom backend API for authentication
+                    const response = await axios.post('http://localhost:5001/api/auth/login', {
                         username: credentials?.username,
                         password: credentials?.password,
                     });
 
-                    // Check if the response is successful and contains a user
                     if (response.status === 200 && response.data.user) {
-                        const user: User = response.data.user; // Extract the user object
+                        const user: User = response.data.user; // Type the user response
                         return user;
                     } else {
-                        // Log errors for easier debugging
                         console.error('Login failed:', response.data?.error || 'Unknown error');
-                        return null;
+                        return null; // Login failed
                     }
-                } catch (error) {
-                    const axiosError = error as AxiosError<{ error: string }>; // Type the error for clarity
-                    if (axiosError.response?.data?.error) {
-                        console.error('Authorization error from backend:', axiosError.response.data.error);
-                    } else {
-                        console.error('Unexpected error during authorization:', axiosError.message);
-                    }
-                    return null; // Return null on login failure
+                } catch (error: any) {
+                    console.error('Error during authorization:', error?.response?.data?.error || error.message);
+                    return null; // Login failed
                 }
-            },
+            }
         }),
     ],
-    secret: process.env.NEXTAUTH_SECRET, // Use a strong secret for signing NextAuth tokens
+    secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
-        // Handle JWT customization for session storage
         async jwt({ token, user }) {
             if (user) {
-                // Add user-specific properties to the token
+                // Assign user properties to the JWT token
                 token.id = (user as User).id;
                 token.email = (user as User).email;
             }
             return token;
         },
-        // Customize the session object with token properties
         async session({ session, token }) {
             if (session.user) {
+                // Assign token properties to the session user object
                 session.user = {
                     ...(session.user || {}),
                     id: token.id as string,
                     email: token.email as string,
-                } as User;
+                } as User;  // Cast session.user as User type
             }
             return session;
         },
     },
-    // Define custom pages for authentication flow
     pages: {
-        signIn: '/auth/login', // Redirect users to a custom login page
-        error: '/auth/error',  // Redirect users to a custom error page on failure
+        signIn: '/auth/login',  // Redirect to a custom login page
+        error: '/auth/error',   // Optional custom error page
     },
-    debug: process.env.NODE_ENV === 'development', // Enable debug logs in development mode
+    debug: process.env.NODE_ENV === 'development',  // Enable debug logs in development
 };
 
 export default NextAuth(authOptions);
