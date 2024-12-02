@@ -21,7 +21,7 @@ export const authOptions: AuthOptions = {
             async authorize(credentials) {
                 try {
                     // Use environment variable for the backend URL to avoid hardcoding
-                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://152.42.243.146:5000';
 
                     if (!backendUrl) {
                         throw new Error('Backend URL is not defined. Please set NEXT_PUBLIC_BACKEND_API_URL in your environment variables.');

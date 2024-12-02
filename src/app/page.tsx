@@ -21,7 +21,7 @@ const HomePage = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
                 <h1 className="text-4xl font-bold text-gray-900 mb-6">
-                    Тавтай морил! Vone DAO
+                    Vone-д Тавтай морил! Vone DAO
                 </h1>
                 <button
                     onClick={() =>
