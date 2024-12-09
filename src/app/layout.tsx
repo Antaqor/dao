@@ -2,7 +2,7 @@
 import React from 'react';
 import { SessionProvider } from "next-auth/react";
 import Header from './components/Header';
-import Footer from './components/Footer';
+import BottomNav from './components/BottomNav';
 import '../app/globals.css';
 
 export default function RootLayout({
@@ -18,7 +18,7 @@ export default function RootLayout({
             <main className="flex-grow w-full">
                 {children} {/* Children will be replaced by the content of the individual pages */}
             </main>
-            <Footer /> {/* Footer added globally */}
+            <BottomNav/>
         </SessionProvider>
         </body>
         </html>

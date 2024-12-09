@@ -1,64 +1,39 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { signOut, useSession } from 'next-auth/react'; // Removed signIn as it's no longer used
-import logo from '../img/logo.svg';
-import Image from 'next/image';
+import { AiOutlineMenu, AiOutlineSearch } from 'react-icons/ai';
 
 const Header: React.FC = () => {
     const router = useRouter();
-    const { data: session, status } = useSession();
-
-    // Handle navigation to specific pages
-    const handleNavigation = (path: string) => {
-        router.push(path);
-    };
 
     return (
-        <header className="bg-black text-white py-3 shadow-md border-b border-gray-800">
-            <div className="container max-w-screen-lg mx-auto flex justify-between items-center px-6">
+        <header className="bg-white shadow-md border-b border-gray-200">
+            <div className="container mx-auto flex justify-between items-center px-4 py-2">
                 {/* Logo Section */}
-                <div
-                    className="text-xl font-bold flex items-center gap-2 cursor-pointer"
-                    onClick={() => handleNavigation('/')}
-                >
-                    <Image src={logo} alt="Vone Logo" className="h-10 w-10 object-contain" />
+                <div className="flex items-center space-x-3">
+                    <div className="text-2xl font-bold text-black cursor-pointer" onClick={() => router.push('/')}>
+                        VONE CLAN
+                    </div>
                 </div>
 
-                {/* Authentication Buttons */}
+                {/* Navigation Tabs */}
+                <div className="hidden md:flex space-x-6 text-sm font-medium">
+                    <span className="cursor-pointer hover:text-blue-600" onClick={() => router.push('/community')}>
+                        Community
+                    </span>
+                    <span className="cursor-pointer hover:text-blue-600" onClick={() => router.push('/classroom')}>
+                        Classroom
+                    </span>
+                    <span className="cursor-pointer hover:text-blue-600" onClick={() => router.push('/calendar')}>
+                        Calendar
+                    </span>
+                    <span className="cursor-pointer hover:text-blue-600" onClick={() => router.push('/members')}>
+                        Members
+                    </span>
+                </div>
+
+                {/* Search and Mobile Menu Icons */}
                 <div className="flex items-center space-x-4">
-                    {status === 'loading' ? (
-                        <button
-                            aria-label="Loading"
-                            className="bg-gray-600 text-white font-semibold py-2 px-4 rounded transition-all hover:bg-gray-500"
-                        >
-                            Loading...
-                        </button>
-                    ) : session ? (
-                        <button
-                            onClick={() => signOut()}
-                            aria-label="Sign Out"
-                            className="bg-gray-800 text-white font-semibold py-2 px-6 border border-gray-700 transition-all duration-200 hover:bg-gray-700 hover:text-blue-400"
-                        >
-                            Гарах
-                        </button>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => handleNavigation('/login')}
-                                aria-label="Login"
-                                className="bg-gray-800 text-white font-semibold py-2 px-6 border border-gray-700 transition-all duration-200 hover:bg-gray-700 hover:text-blue-400"
-                            >
-                                Нэвтрэх
-                            </button>
-                            <button
-                                onClick={() => handleNavigation('/register')}
-                                aria-label="Register"
-                                className="bg-gray-800 text-white font-semibold py-2 px-6 border border-gray-700 transition-all duration-200 hover:bg-gray-700 hover:text-blue-400"
-                            >
-                                Бүртгүүлэх
-                            </button>
-                        </>
-                    )}
+                    <AiOutlineMenu className="text-xl text-gray-600 cursor-pointer md:hidden" />
                 </div>
             </div>
         </header>
