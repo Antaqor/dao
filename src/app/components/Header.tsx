@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { AiOutlineMenu, AiOutlineSearch } from 'react-icons/ai';
+import { AiOutlineMenu } from 'react-icons/ai';
 
 const Header: React.FC = () => {
     const router = useRouter();
