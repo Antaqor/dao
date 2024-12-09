@@ -14,7 +14,6 @@ const BottomNav: React.FC = () => {
                     className="flex flex-col items-center text-gray-400 hover:text-white transition-all duration-200"
                 >
                     <AiOutlineHome className="text-2xl"/>
-                    <span className="text-xs mt-1">Home</span>
                 </button>
 
                 {/* Services Button */}
@@ -23,14 +22,12 @@ const BottomNav: React.FC = () => {
                     className="flex flex-col items-center text-gray-400 hover:text-white transition-all duration-200"
                 >
                     <AiOutlineAppstore className="text-2xl"/>
-                    <span className="text-xs mt-1">Services</span>
                 </button>
                 <button
                     onClick={() => router.push('/services')}
                     className="flex flex-col items-center text-gray-400 hover:text-white transition-all duration-200"
                 >
                     <AiOutlineAppstore className="text-2xl"/>
-                    <span className="text-xs mt-1">Market</span>
                 </button>
                 {/* Profile Button */}
                 <button
@@ -38,7 +35,6 @@ const BottomNav: React.FC = () => {
                     className="flex flex-col items-center text-gray-400 hover:text-white transition-all duration-200"
                 >
                     <AiOutlineUser className="text-2xl"/>
-                    <span className="text-xs mt-1">Profile</span>
                 </button>
             </div>
         </nav>
