@@ -1,167 +1,126 @@
-// src/app/components/Newsfeed.tsx
-
 "use client";
 import React, { useEffect, useState } from 'react';
-import { AiOutlineHeart, AiOutlineComment, AiOutlineSend } from 'react-icons/ai';
-import { FaRegBookmark } from 'react-icons/fa';
-import Image from 'next/image';
-
-// Define TypeScript types for Post and Comment
-interface Comment {
-    id: number;
-    username: string;
-    text: string;
-}
 
 interface Post {
-    id: number;
-    username: string;
-    userImage: string;
-    postImage: string;
-    likes: number;
-    caption: string;
-    comments: Comment[];
+    _id: string;
+    title: string;
+    content: string;
+    createdAt: string;
+    user?: { username: string };
 }
-
-const mockPosts: Post[] = [
-    {
-        id: 1,
-        username: 'vone_z',
-        userImage: '/img/profile-pic.jpg',
-        postImage: '/img/post1.jpg',
-        likes: 120,
-        caption: "Loving the view today! #travel #nature",
-        comments: [
-            { id: 1, username: 'user123', text: 'Wow, amazing picture!' },
-            { id: 2, username: 'traveler_girl', text: 'Where is this place?' },
-        ],
-    },
-    {
-        id: 2,
-        username: 'nature_fanatic',
-        userImage: '/img/profile2.jpg',
-        postImage: '/img/post2.jpg',
-        likes: 85,
-        caption: "Nature never goes out of style. #green",
-        comments: [
-            { id: 1, username: 'adventurer', text: 'Nature heals the soul!' },
-        ],
-    },
-];
 
 const Newsfeed: React.FC = () => {
     const [posts, setPosts] = useState<Post[]>([]);
-    const [newPost, setNewPost] = useState<string>('');
-    const [newPostImage, setNewPostImage] = useState<string>('');
+    const [title, setTitle] = useState<string>(''); // State for post title
+    const [content, setContent] = useState<string>(''); // State for post content
+    const [error, setError] = useState<string | null>(null);
 
+    // Fetch posts from the backend
+    const fetchPosts = async () => {
+        try {
+            const res = await fetch('http://localhost:5001/api/posts'); // Backend URL
+            if (!res.ok) {
+                throw new Error(`Error fetching posts: ${res.status}`);
+            }
+            const data = await res.json();
+            setPosts(data);
+            setError(null);
+        } catch (err: any) {
+            console.error(err.message);
+            setError('Failed to load posts.');
+        }
+    };
+
+    // Create a new post
+    const createPost = async () => {
+        if (!title.trim() || !content.trim()) {
+            setError('Title and Content are required.');
+            return;
+        }
+
+        try {
+            const res = await fetch('http://localhost:5001/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title,
+                    content,
+                    userId: 'your-user-id', // Replace with authenticated user ID
+                }),
+            });
+
+            if (!res.ok) {
+                throw new Error(`Error creating post: ${res.status}`);
+            }
+
+            const data = await res.json();
+            setPosts((prev) => [data.post, ...prev]); // Add new post to the top
+            setTitle(''); // Reset title input
+            setContent(''); // Reset content input
+            setError(null); // Clear errors
+        } catch (err: any) {
+            console.error(err.message);
+            setError('Failed to create post.');
+        }
+    };
+
+    // Fetch posts on page load
     useEffect(() => {
-        // This could be an API call to fetch real posts
-        setPosts(mockPosts);
+        fetchPosts();
     }, []);
-
-    const handleAddPost = () => {
-        if (newPost.trim() === '') return;
-
-        const newPostData: Post = {
-            id: posts.length + 1,
-            username: 'current_user',
-            userImage: '/img/profile-pic.jpg',
-            postImage: newPostImage || '/img/default-post.jpg',
-            likes: 0,
-            caption: newPost,
-            comments: [],
-        };
-
-        setPosts([newPostData, ...posts]);
-        setNewPost('');
-        setNewPostImage('');
-    };
-
-    const handleLike = (postId: number) => {
-        setPosts((prevPosts) =>
-            prevPosts.map((post) =>
-                post.id === postId ? { ...post, likes: post.likes + 1 } : post
-            )
-        );
-    };
 
     return (
         <div className="flex flex-col items-center py-10 bg-gray-100 min-h-screen">
-            <div className="w-full max-w-xl">
-                {/* Write Something Section */}
-                <div className="bg-white shadow-md rounded-lg p-4 mb-8">
-                    <textarea
-                        value={newPost}
-                        onChange={(e) => setNewPost(e.target.value)}
-                        placeholder="Write something..."
-                        className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+            <div className="w-full max-w-2xl">
+                {/* New Post Form */}
+                <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+                    <h2 className="text-2xl font-bold text-center mb-4">Create a New Post</h2>
+                    {error && (
+                        <div className="text-red-600 bg-red-100 p-4 rounded mb-4">
+                            {error}
+                        </div>
+                    )}
                     <input
                         type="text"
-                        value={newPostImage}
-                        onChange={(e) => setNewPostImage(e.target.value)}
-                        placeholder="Image URL (optional)"
-                        className="w-full p-2 mt-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Title"
+                        className="w-full p-2 border rounded-md mb-4 focus:ring-2 focus:ring-blue-500"
+                    />
+                    <textarea
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder="Content"
+                        className="w-full p-2 border rounded-md mb-4 focus:ring-2 focus:ring-blue-500"
                     />
                     <button
-                        onClick={handleAddPost}
-                        className="mt-4 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+                        onClick={createPost}
+                        className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
                     >
                         Post
                     </button>
                 </div>
 
-                {posts.map((post) => (
-                    <div key={post.id} className="bg-white shadow-md rounded-lg mb-8">
-                        {/* Header */}
-                        <div className="flex items-center p-4">
-                            <Image
-                                src={post.userImage}
-                                alt="user profile"
-                                width={40}
-                                height={40}
-                                className="rounded-full object-cover"
-                            />
-                            <span className="ml-4 font-semibold">{post.username}</span>
-                        </div>
-                        {/* Post Image */}
-                        <Image
-                            src={post.postImage}
-                            alt="post"
-                            width={500}
-                            height={500}
-                            className="w-full object-cover"
-                        />
-                        {/* Buttons */}
-                        <div className="flex justify-between items-center px-4 pt-4">
-                            <div className="flex space-x-4">
-                                <AiOutlineHeart
-                                    className="w-6 h-6 cursor-pointer"
-                                    onClick={() => handleLike(post.id)}
-                                />
-                                <AiOutlineComment className="w-6 h-6 cursor-pointer" />
-                                <AiOutlineSend className="w-6 h-6 cursor-pointer" />
-                            </div>
-                            <FaRegBookmark className="w-6 h-6 cursor-pointer" />
-                        </div>
-                        {/* Likes */}
-                        <p className="px-4 pt-2 font-semibold text-sm">{post.likes} likes</p>
-                        {/* Caption */}
-                        <p className="px-4 py-2 text-sm">
-                            <span className="font-semibold mr-2">{post.username}</span>
-                            {post.caption}
-                        </p>
-                        {/* Comments */}
-                        <div className="px-4 pb-4 text-sm text-gray-500">
-                            {post.comments.map((comment) => (
-                                <p key={comment.id}>
-                                    <span className="font-semibold mr-2">{comment.username}</span>
-                                    {comment.text}
+                {/* Display Posts */}
+                <h2 className="text-2xl font-bold mb-4">Posts</h2>
+                {posts.length > 0 ? (
+                    <div className="space-y-6">
+                        {posts.map((post) => (
+                            <div key={post._id} className="bg-white shadow-md rounded-lg p-6">
+                                <h3 className="text-xl font-semibold">{post.title}</h3>
+                                <p className="text-gray-700 mt-2">{post.content}</p>
+                                <p className="text-sm text-gray-500 mt-4">
+                                    Posted by: {post.user?.username || 'Anonymous'} on{' '}
+                                    {new Date(post.createdAt).toLocaleString()}
                                 </p>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                ) : (
+                    <p className="text-gray-500 text-center">No posts available. Create one!</p>
+                )}
             </div>
         </div>
     );

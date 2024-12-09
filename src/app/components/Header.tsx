@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react'; // Removed signIn as it's no longer used
-import logo from '../img/vone.svg';
+import logo from '../img/logo.svg';
 import Image from 'next/image';
 
 const Header: React.FC = () => {
@@ -23,14 +23,6 @@ const Header: React.FC = () => {
                 >
                     <Image src={logo} alt="Vone Logo" className="h-10 w-10 object-contain" />
                 </div>
-
-                {/* Navigation Links */}
-                <nav className="hidden md:flex space-x-6 text-base font-medium">
-                    <a href="#newsfeed" className="hover:text-gray-400 transition duration-200">Мэдээ</a>
-                    <a href="#marketplace" className="hover:text-gray-400 transition duration-200">Худалдаа</a>
-                    <a href="#services" className="hover:text-gray-400 transition duration-200">Үйлчилгээ</a>
-                    <a href="#events" className="hover:text-gray-400 transition duration-200">Үйл явдал</a>
-                </nav>
 
                 {/* Authentication Buttons */}
                 <div className="flex items-center space-x-4">

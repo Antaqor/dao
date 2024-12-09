@@ -21,19 +21,8 @@ const HomePage = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
                 <h1 className="text-4xl font-bold text-gray-900 mb-6">
-                    Vone-д Тавтай морил! Vone DAO
+                 Hi! Тавтай морил! Vone DAO
                 </h1>
-                <button
-                    onClick={() =>
-                        signIn('credentials', {
-                            redirect: true,
-                            callbackUrl: 'http://152.42.243.146:5000/dashboard', // Hardcoded IP
-                        })
-                    }
-                    className="mt-8 text-white bg-black px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition"
-                >
-                    Sign in with Google
-                </button>
             </div>
         );
     }
