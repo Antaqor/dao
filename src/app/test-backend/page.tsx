@@ -1,68 +1,55 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-
-interface Post {
-    _id: string;
-    title: string;
-    content: string;
-    createdAt: string;
-}
+import React, { useState } from 'react';
 
 const TestBackendPage = () => {
-    const [posts, setPosts] = useState<Post[]>([]); // State to store fetched posts
-    const [error, setError] = useState<string | null>(null); // State to handle errors
+    const [response, setResponse] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    // Fetch posts from backend
-    const fetchPosts = async () => {
+    const testBackend = async () => {
         try {
-            const res = await fetch("http://localhost:5001/api/posts"); // Replace with your backend URL
+            const res = await fetch('http://152.42.243.146:5000/api/ping', {
+                method: 'GET',
+            }); // Replace with your backend IP or domain
+
             if (!res.ok) {
-                throw new Error(`Failed to fetch posts: ${res.status}`);
+                throw new Error(`Failed to connect to backend: ${res.statusText}`);
             }
-            const data = await res.json();
-            setPosts(data); // Store posts in state
-            setError(null); // Clear any previous errors
-        } catch (err: any) {
-            setError(err.message || "Something went wrong!");
-            setPosts([]); // Clear posts on error
+
+            const data: { message: string } = await res.json(); // Explicitly type the response
+            setResponse(data.message); // Assuming the backend returns `{ message: 'Pong! Backend is working.' }`
+            setError(null);
+        } catch (err: unknown) { // Use 'unknown' for better error handling
+            if (err instanceof Error) {
+                setError(err.message); // Extract the message from the Error object
+            } else {
+                setError('An unknown error occurred');
+            }
+            setResponse(null);
         }
     };
 
-    // Fetch posts on page load
-    useEffect(() => {
-        fetchPosts();
-    }, []);
-
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
-                <h1 className="text-2xl font-bold mb-6 text-center">Fetch Posts</h1>
+            <h1 className="text-3xl font-bold mb-6 text-center text-gray-900">Test Backend</h1>
+            <button
+                onClick={testBackend}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+                Test Connection
+            </button>
 
-                {/* Show error message */}
-                {error && (
-                    <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
-                        <p>{error}</p>
-                    </div>
-                )}
+            {response && (
+                <div className="mt-4 text-green-700">
+                    <p>Response: {response}</p>
+                </div>
+            )}
 
-                {/* Show posts */}
-                {posts.length > 0 ? (
-                    <ul className="space-y-4">
-                        {posts.map((post) => (
-                            <li key={post._id} className="bg-gray-100 p-4 rounded shadow">
-                                <h2 className="text-xl font-semibold">{post.title}</h2>
-                                <p className="text-gray-700 mt-2">{post.content}</p>
-                                <p className="text-sm text-gray-500 mt-4">
-                                    Created At: {new Date(post.createdAt).toLocaleString()}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-gray-700 text-center">No posts found.</p>
-                )}
-            </div>
+            {error && (
+                <div className="mt-4 text-red-600">
+                    <p>Error: {error}</p>
+                </div>
+            )}
         </div>
     );
 };

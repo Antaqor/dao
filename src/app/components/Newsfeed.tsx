@@ -25,9 +25,14 @@ const Newsfeed: React.FC = () => {
             const data = await res.json();
             setPosts(data);
             setError(null);
-        } catch (err: any) {
-            console.error(err.message);
-            setError('Failed to load posts.');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                console.error(err.message);
+                setError('Failed to load posts.');
+            } else {
+                console.error('Unknown error occurred');
+                setError('An unknown error occurred.');
+            }
         }
     };
 
@@ -60,9 +65,14 @@ const Newsfeed: React.FC = () => {
             setTitle(''); // Reset title input
             setContent(''); // Reset content input
             setError(null); // Clear errors
-        } catch (err: any) {
-            console.error(err.message);
-            setError('Failed to create post.');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                console.error(err.message);
+                setError('Failed to create post.');
+            } else {
+                console.error('Unknown error occurred');
+                setError('An unknown error occurred.');
+            }
         }
     };
 
@@ -99,7 +109,7 @@ const Newsfeed: React.FC = () => {
                         onClick={createPost}
                         className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
                     >
-                        Postt
+                        Post
                     </button>
                 </div>
 
