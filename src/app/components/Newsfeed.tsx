@@ -18,7 +18,7 @@ const Newsfeed: React.FC = () => {
     // Fetch posts from the backend
     const fetchPosts = async () => {
         try {
-            const res = await fetch('http://localhost:5001/api/posts'); // Backend URL
+            const res = await fetch('http://152.42.243.146/api/posts'); // Backend URL
             if (!res.ok) {
                 throw new Error(`Error fetching posts: ${res.status}`);
             }
@@ -44,7 +44,7 @@ const Newsfeed: React.FC = () => {
         }
 
         try {
-            const res = await fetch('http://localhost:5001/api/posts', {
+            const res = await fetch('http://152.42.243.146/api/posts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
