@@ -1,19 +1,27 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import logo from '../img/logo.svg';
 import Image from 'next/image';
+import { FaSun, FaMoon, FaCloudSun } from 'react-icons/fa';
 
 const Header: React.FC = () => {
     const router = useRouter();
-    const { data: session, status } = useSession();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { data: session } = useSession();
 
-    // Handle navigation
-    const handleNavigation = (path: string) => {
-        router.push(path);
-        setIsMobileMenuOpen(false); // Close mobile menu on navigation
+    // Determine greeting based on time of day
+    const getGreeting = () => {
+        const currentHour = new Date().getHours();
+        if (currentHour >= 5 && currentHour < 12) {
+            return { text: 'Өглөөний мэнд', icon: <FaSun className="text-yellow-400 text-lg" /> };
+        } else if (currentHour >= 12 && currentHour < 18) {
+            return { text: 'Өдрийн мэнд', icon: <FaCloudSun className="text-orange-400 text-lg" /> };
+        } else {
+            return { text: 'Шөнийн мэнд', icon: <FaMoon className="text-blue-400 text-lg" /> };
+        }
     };
+
+    const greeting = getGreeting();
 
     return (
         <header className="bg-black text-white shadow-md sticky top-0 z-50">
@@ -21,128 +29,42 @@ const Header: React.FC = () => {
                 {/* Logo */}
                 <div
                     className="flex items-center cursor-pointer"
-                    onClick={() => handleNavigation('/')}
+                    onClick={() => router.push('/')}
                 >
                     <Image src={logo} alt="Logo" className="h-8 w-auto object-contain" />
-                    <span className="ml-3 font-bold text-lg">Vone</span>
                 </div>
 
-                {/* Desktop Navigation */}
-                <nav className="hidden md:flex space-x-6 items-center">
-                    <button
-                        onClick={() => handleNavigation('/newsfeed')}
-                        className="hover:text-gray-300 transition duration-150"
-                    >
-                        Newsfeed
-                    </button>
-                    <button
-                        onClick={() => handleNavigation('/service')}
-                        className="hover:text-gray-300 transition duration-150"
-                    >
-                        Service
-                    </button>
-                    <button
-                        onClick={() => handleNavigation('/profile')}
-                        className="hover:text-gray-300 transition duration-150"
-                    >
-                        Profile
-                    </button>
+                {/* Greeting and User Profile */}
+                <div className="flex items-center space-x-4">
+                    {/* Greeting with Icon */}
+                    <div className="flex flex-col items-end">
+                        <div className="flex items-center space-x-2">
+                            {greeting.icon}
+                            <span className="text-sm font-semibold">{greeting.text}</span>
+                        </div>
+                        {session?.user?.name && (
+                            <span className="text-xs text-gray-400">{session.user.name}</span>
+                        )}
+                    </div>
 
-                    {/* Auth Buttons */}
-                    {status === 'loading' ? (
-                        <button className="text-gray-400">Loading...</button>
-                    ) : session ? (
-                        <button
-                            onClick={() => signOut()}
-                            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition duration-150"
-                        >
-                            Logout
-                        </button>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => handleNavigation('/login')}
-                                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-150"
-                            >
-                                Login
-                            </button>
-                            <button
-                                onClick={() => handleNavigation('/register')}
-                                className="bg-gray-700 text-white py-2 px-4 rounded hover:bg-gray-800 transition duration-150"
-                            >
-                                Register
-                            </button>
-                        </>
-                    )}
-                </nav>
-
-                {/* Mobile Burger Menu */}
-                <div className="md:hidden">
-                    <button
-                        className="text-white focus:outline-none"
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    >
-                        ☰
-                    </button>
+                    {/* User Avatar */}
+                    <div className="h-8 w-8 rounded-full bg-gray-700 overflow-hidden">
+                        {session?.user?.image ? (
+                            <Image
+                                src={session.user.image}
+                                alt="User Profile"
+                                className="object-cover"
+                                width={32}
+                                height={32}
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center h-full w-full text-sm text-gray-300">
+                                U
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-
-            {/* Mobile Menu */}
-            {isMobileMenuOpen && (
-                <div className="bg-black text-white fixed top-0 left-0 w-full h-screen z-50 flex flex-col items-center justify-center space-y-6">
-                    <button
-                        onClick={() => handleNavigation('/newsfeed')}
-                        className="text-xl hover:text-gray-300 transition duration-150"
-                    >
-                        Newsfeed
-                    </button>
-                    <button
-                        onClick={() => handleNavigation('/service')}
-                        className="text-xl hover:text-gray-300 transition duration-150"
-                    >
-                        Service
-                    </button>
-                    <button
-                        onClick={() => handleNavigation('/profile')}
-                        className="text-xl hover:text-gray-300 transition duration-150"
-                    >
-                        Profile
-                    </button>
-
-                    {/* Auth Buttons */}
-                    {status === 'loading' ? (
-                        <button className="text-gray-400 text-lg">Loading...</button>
-                    ) : session ? (
-                        <button
-                            onClick={() => signOut()}
-                            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition duration-150"
-                        >
-                            Logout
-                        </button>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => handleNavigation('/login')}
-                                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-150"
-                            >
-                                Login
-                            </button>
-                            <button
-                                onClick={() => handleNavigation('/register')}
-                                className="bg-gray-700 text-white py-2 px-4 rounded hover:bg-gray-800 transition duration-150"
-                            >
-                                Register
-                            </button>
-                        </>
-                    )}
-                    <button
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="text-sm text-gray-400 hover:text-gray-300 mt-6"
-                    >
-                        Close
-                    </button>
-                </div>
-            )}
         </header>
     );
 };
