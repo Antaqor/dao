@@ -12,7 +12,7 @@ const ProfilePage: React.FC = () => {
     // Redirect to login if user is not authenticated
     useEffect(() => {
         if (status === "unauthenticated") {
-            router.push("/login"); // Redirect to a clean /login page without callbackUrl
+            router.push("/login");
         }
     }, [status, router]);
 
@@ -92,6 +92,40 @@ const ProfilePage: React.FC = () => {
                 <p className="text-sm text-gray-500 mt-2">
                     IBAN дансны дугаар: {user.iban}
                 </p>
+            </div>
+
+            {/* Actions Section */}
+            <div className="mt-4 px-4">
+                <div className="bg-green-100 p-4 rounded-lg flex items-center justify-between">
+                    <span className="text-sm font-semibold">Kids Account</span>
+                    <button className="bg-black text-white py-1 px-4 rounded">
+                        Дэлгэрэнгүй
+                    </button>
+                </div>
+            </div>
+
+            {/* Other Options */}
+            <div className="mt-4 px-4">
+                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold">Цахим мөнгөний гэрээ</span>
+                    <button className="text-green-500">→</button>
+                </div>
+                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold">Купон</span>
+                    <button className="text-green-500">→</button>
+                </div>
+                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold">Бүртгэлтэй банкны данс</span>
+                    <button className="text-green-500">→</button>
+                </div>
+                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold">Дансны хуулга</span>
+                    <button className="text-green-500">→</button>
+                </div>
+                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold">Дансны нэгдсэн сан</span>
+                    <button className="text-green-500">→</button>
+                </div>
             </div>
 
             {/* Logout Button */}
