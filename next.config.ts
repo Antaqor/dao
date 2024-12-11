@@ -1,9 +1,11 @@
-// Import and configure dotenv at the top of your configuration file
+// next.config.ts
+
 import { config } from 'dotenv';
-config(); // This will load environment variables from a .env file into process.env
+config(); // Load environment variables
 
 import type { NextConfig } from 'next';
 
+/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
     reactStrictMode: true,
     env: {
@@ -11,6 +13,10 @@ const nextConfig: NextConfig = {
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
         NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
         NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+        NEXT_PUBLIC_BACKEND_API_URL: process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001',
+    },
+    images: {
+        domains: ['localhost', '206.189.80.118'], // Add your backend domain(s) here
     },
 };
 

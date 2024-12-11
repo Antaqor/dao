@@ -1,84 +1,79 @@
-import NextAuth, { AuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import axios, { AxiosError } from 'axios';
+// pages/api/auth/[...nextauth].ts
 
-// Define the User type explicitly (optional, since it's now in the global types)
-interface User {
-    id: string;
-    email: string;
-    name?: string;
-    image?: string;
-}
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 
-export const authOptions: AuthOptions = {
+export default NextAuth({
     providers: [
         CredentialsProvider({
-            name: 'Credentials',
+            name: "Credentials",
             credentials: {
-                username: { label: 'Username', type: 'text', placeholder: 'Username' },
-                password: { label: 'Password', type: 'password', placeholder: 'Password' },
+                username: { label: "Username", type: "text", placeholder: "goku" },
+                password: { label: "Password", type: "password" },
             },
-            async authorize(credentials) {
+            async authorize(credentials, req) {
+                if (!credentials) {
+                    throw new Error("No credentials provided");
+                }
+
+                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
+
                 try {
-                    // Use environment variable for the backend URL to avoid hardcoding
-                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://152.42.243.146:5000';
-
-                    if (!backendUrl) {
-                        throw new Error('Backend URL is not defined. Please set NEXT_PUBLIC_BACKEND_API_URL in your environment variables.');
-                    }
-
-                    // Make the API call to the backend for authentication
-                    const response = await axios.post(`${backendUrl}/api/auth/login`, {
-                        username: credentials?.username,
-                        password: credentials?.password,
+                    const res = await fetch(`${backendUrl}/api/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            username: credentials.username,
+                            password: credentials.password,
+                        }),
                     });
 
-                    if (response.status === 200 && response.data.user) {
-                        const user: User = response.data.user; // Type the user response
-                        return user;
-                    } else {
-                        console.error('Login failed:', response.data?.error || 'Unknown error');
-                        return null; // Login failed
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        throw new Error(data.error || 'Failed to login');
                     }
+
+                    return {
+                        id: data.user.id,
+                        username: data.user.username,
+                        email: data.user.email,
+                        profilePicture: data.user.profilePicture,
+                        accessToken: data.token, // Store the token
+                    };
                 } catch (error) {
-                    const axiosError = error as AxiosError<{ error: string }>; // Properly type the error as AxiosError
-                    if (axiosError.response?.data?.error) {
-                        console.error('Authorization error:', axiosError.response.data.error);
-                    } else {
-                        console.error('Unexpected error during authorization:', axiosError.message);
-                    }
-                    return null; // Login failed
+                    console.error('Error during authorization:', error);
+                    throw new Error('Failed to login');
                 }
             },
         }),
     ],
-    secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
-                // Assign user properties to the JWT token
-                token.id = (user as User).id;
-                token.email = (user as User).email;
+                token.id = user.id;
+                token.username = user.username;
+                token.email = user.email;
+                token.profilePicture = user.profilePicture;
+                token.accessToken = user.accessToken; // Store token in JWT
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                // Assign token properties to the session user object
-                session.user = {
-                    ...(session.user || {}),
-                    id: token.id as string,
-                    email: token.email as string,
-                } as User; // Cast session.user as User type
+                session.user.id = token.id as string;
+                session.user.username = token.username as string;
+                session.user.email = token.email as string;
+                session.user.profilePicture = token.profilePicture as string;
+                session.user.accessToken = token.accessToken as string; // Store token in session
             }
             return session;
         },
     },
     pages: {
-        signIn: '/auth/login', // Redirect to a custom login page
-        error: '/auth/error',  // Optional custom error page
+        signIn: '/auth/login', // Custom login page
     },
-    debug: process.env.NODE_ENV === 'development', // Enable debug logs in development
-};
-
-export default NextAuth(authOptions);
+    secret: process.env.NEXTAUTH_SECRET,
+});

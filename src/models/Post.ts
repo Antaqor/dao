@@ -1,3 +1,4 @@
+//models/Post.ts
 import { Schema, model, models } from 'mongoose';
 
 const PostSchema = new Schema({

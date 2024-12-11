@@ -1,135 +1,143 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { HeartIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 
 interface Post {
     _id: string;
     title: string;
     content: string;
     createdAt: string;
-    user?: { username: string };
+    user?: {
+        _id: string;
+        username: string;
+        verified?: boolean;
+    };
+    engagement?: {
+        likes: number;
+        comments: number;
+    };
 }
 
-const Newsfeed: React.FC = () => {
-    const [posts, setPosts] = useState<Post[]>([]);
-    const [title, setTitle] = useState<string>(''); // State for post title
-    const [content, setContent] = useState<string>(''); // State for post content
-    const [error, setError] = useState<string | null>(null);
+const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    // Fetch posts from the backend
+    let interval = Math.floor(seconds / 31536000);
+    if (interval >= 1) return `${interval}y`;
+
+    interval = Math.floor(seconds / 2592000);
+    if (interval >= 1) return `${interval}m`;
+
+    interval = Math.floor(seconds / 86400);
+    if (interval >= 1) return `${interval}d`;
+
+    interval = Math.floor(seconds / 3600);
+    if (interval >= 1) return `${interval}h`;
+
+    interval = Math.floor(seconds / 60);
+    if (interval >= 1) return `${interval}m`;
+
+    return `${Math.floor(seconds)}s`;
+};
+
+const Newsfeed: React.FC = () => {
+    const { data: session, status } = useSession();
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [content, setContent] = useState<string>("");
+
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001";
+
     const fetchPosts = async () => {
         try {
-            const res = await fetch('http://152.42.243.146:5000/api/posts'); // Backend URL
-            if (!res.ok) {
-                throw new Error(`Error fetching posts: ${res.status}`);
-            }
+            const res = await fetch(`${backendUrl}/api/posts`, { credentials: "include" });
+            if (!res.ok) throw new Error(`Error fetching posts: ${res.status}`);
             const data = await res.json();
             setPosts(data);
-            setError(null);
-        } catch (err: unknown) {
-            if (err instanceof Error) {
-                console.error(err.message);
-                setError('Failed to load posts.');
-            } else {
-                console.error('Unknown error occurred');
-                setError('An unknown error occurred.');
-            }
+        } catch (err) {
+            console.error("Failed to load posts:", err);
         }
     };
 
-    // Create a new post
     const createPost = async () => {
-        if (!title.trim() || !content.trim()) {
-            setError('Title and Content are required.');
-            return;
-        }
+        if (!content.trim()) return;
 
         try {
-            const res = await fetch('http://152.42.243.146:5000/api/posts', {
-                method: 'POST',
+            const res = await fetch(`${backendUrl}/api/posts`, {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${session?.user?.accessToken}`,
                 },
-                body: JSON.stringify({
-                    title,
-                    content,
-                    userId: 'your-user-id', // Replace with authenticated user ID
-                }),
+                body: JSON.stringify({ content }),
             });
 
-            if (!res.ok) {
-                throw new Error(`Error creating post: ${res.status}`);
-            }
-
+            if (!res.ok) throw new Error(`Error creating post: ${res.status}`);
             const data = await res.json();
-            setPosts((prev) => [data.post, ...prev]); // Add new post to the top
-            setTitle(''); // Reset title input
-            setContent(''); // Reset content input
-            setError(null); // Clear errors
-        } catch (err: unknown) {
-            if (err instanceof Error) {
-                console.error(err.message);
-                setError('Failed to create post.');
-            } else {
-                console.error('Unknown error occurred');
-                setError('An unknown error occurred.');
-            }
+            setPosts((prev) => [data.post, ...prev]);
+            setContent("");
+        } catch (err) {
+            console.error("Failed to create post:", err);
         }
     };
 
-    // Fetch posts on page load
     useEffect(() => {
-        fetchPosts();
-    }, []);
+        if (status === "authenticated") fetchPosts();
+    }, [session, status]);
 
     return (
-        <div className="flex flex-col items-center py-10 bg-gray-100 min-h-screen">
-            <div className="w-full max-w-2xl">
-                {/* New Post Form */}
-                <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-                    <h2 className="text-2xl font-bold text-center mb-4">Create a New Post</h2>
-                    {error && (
-                        <div className="text-red-600 bg-red-100 p-4 rounded mb-4">
-                            {error}
-                        </div>
-                    )}
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Title"
-                        className="w-full p-2 border rounded-md mb-4 focus:ring-2 focus:ring-blue-500"
-                    />
-                    <textarea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="Content"
-                        className="w-full p-2 border rounded-md mb-4 focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                        onClick={createPost}
-                        className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
-                    >
-                        Post
-                    </button>
+        <div className="flex flex-col items-center bg-black w-full">
+            <div className="w-full px-4 pb-20">
+                {/* Post Input */}
+                <div className="bg-black p-4 border-b border-gray-700">
+          <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What's new?"
+              className="w-full bg-gray-800 text-white p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-600 resize-none"
+              rows={3}
+          />
+                    <div className="flex justify-end mt-2">
+                        <button
+                            onClick={createPost}
+                            className="bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                        >
+                            Post
+                        </button>
+                    </div>
                 </div>
 
-                {/* Display Posts */}
-                <h2 className="text-2xl font-bold mb-4">Posts</h2>
+                {/* Posts Section */}
                 {posts.length > 0 ? (
-                    <div className="space-y-6">
+                    <div className="divide-y divide-gray-700">
                         {posts.map((post) => (
-                            <div key={post._id} className="bg-white shadow-md rounded-lg p-6">
-                                <h3 className="text-xl font-semibold">{post.title}</h3>
-                                <p className="text-gray-700 mt-2">{post.content}</p>
-                                <p className="text-sm text-gray-500 mt-4">
-                                    Posted by: {post.user?.username || 'Anonymous'} on{' '}
-                                    {new Date(post.createdAt).toLocaleString()}
-                                </p>
+                            <div key={post._id} className="bg-black p-4">
+                                {/* User Info */}
+                                <div className="flex justify-between items-center mb-2">
+                                    <p className="text-gray-400 text-xs">{getTimeAgo(new Date(post.createdAt))}</p>
+                                    <p className="text-white text-sm font-medium">{post.user?.username || "Anonymous"}</p>
+                                </div>
+
+                                {/* Post Content */}
+                                <h3 className="text-base text-white font-semibold mb-1">{post.title}</h3>
+                                <p className="text-gray-300 text-sm">{post.content}</p>
+
+                                {/* Engagement */}
+                                <div className="flex items-center space-x-4 mt-3 text-gray-400">
+                                    <button className="flex items-center space-x-1 hover:text-red-500">
+                                        <HeartIcon className="h-5 w-5" />
+                                        <span>{post.engagement?.likes || 0}</span>
+                                    </button>
+                                    <button className="flex items-center space-x-1 hover:text-green-500">
+                                        <ChatBubbleLeftIcon className="h-5 w-5" />
+                                        <span>{post.engagement?.comments || 0}</span>
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-gray-500 text-center">No posts available. Create one!</p>
+                    <p className="text-gray-400 text-center mt-4">No posts available. Create one!</p>
                 )}
             </div>
         </div>

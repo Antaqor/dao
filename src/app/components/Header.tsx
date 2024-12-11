@@ -42,25 +42,8 @@ const Header: React.FC = () => {
                             {greeting.icon}
                             <span className="text-sm font-semibold">{greeting.text}</span>
                         </div>
-                        {session?.user?.name && (
-                            <span className="text-xs text-gray-400">{session.user.name}</span>
-                        )}
-                    </div>
-
-                    {/* User Avatar */}
-                    <div className="h-8 w-8 rounded-full bg-gray-700 overflow-hidden">
-                        {session?.user?.image ? (
-                            <Image
-                                src={session.user.image}
-                                alt="User Profile"
-                                className="object-cover"
-                                width={32}
-                                height={32}
-                            />
-                        ) : (
-                            <div className="flex items-center justify-center h-full w-full text-sm text-gray-300">
-                                U
-                            </div>
+                        {session?.user?.username && (
+                            <span className="text-xs text-gray-400">{session.user.username}</span>
                         )}
                     </div>
                 </div>

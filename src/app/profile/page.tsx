@@ -1,144 +1,139 @@
+// src/app/profile/page.tsx
+
 "use client";
 
 import React, { useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const ProfilePage: React.FC = () => {
-    const router = useRouter();
     const { data: session, status } = useSession();
+    const router = useRouter();
 
-    // Redirect to login if user is not authenticated
     useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/login");
-        }
-    }, [status, router]);
+        console.log("Session Data:", session); // Inspect session object
+        if (status === "loading") return; // Do nothing while loading
+        if (!session) router.push("/auth/login"); // Redirect if not authenticated
+    }, [session, status, router]);
 
     if (status === "loading") {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <p>Loading...</p>
-            </div>
-        );
+        return <div>Loading...</div>;
     }
 
-    if (!session) return null; // Avoid rendering until session is available
+    if (!session) {
+        return null; // Or a loading spinner
+    }
 
-    // Mock user data (replace with session data if available)
+    // Construct the profile picture URL
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001";
+
     const user = {
-        name: session?.user?.name || "Anonymous",
-        phone: "94641031", // Replace with actual data
-        email: session?.user?.email || "И-Мэйл холбогдоогүй",
-        qrCode: "/img/qrcode.png",
-        iban: "MN03 0050 0991 0696 8846",
+        id: session.user.id,
+        username: session.user.username || "Unknown User",
+        email: session.user.email || "No email available",
+        profilePicture: session.user.profilePicture
+            ? `${backendUrl}/api/auth/profile-picture/${session.user.id}`
+            : "/img/default-user.png", // Use the profilePicture field or default
+        banner: "/img/banner.jpg",
     };
 
-    return (
-        <div className="min-h-screen bg-gray-100">
-            {/* Header */}
-            <div className="bg-blue-500 text-white px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                    <button
-                        className="text-white text-lg font-bold"
-                        onClick={() => router.back()}
-                    >
-                        ←
-                    </button>
-                    <h1 className="text-xl font-bold">Өдрийн мэнд</h1>
-                </div>
-                <button
-                    onClick={() => router.push("/settings")}
-                    className="text-white text-lg"
-                >
-                    ⚙️
-                </button>
-            </div>
+    const postImages = [
+        "/img/post1.jpg",
+        "/img/post2.jpg",
+        "/img/post3.jpg",
+        "/img/post4.jpg",
+        "/img/post5.jpg",
+        "/img/post6.jpg",
+    ];
 
-            {/* User Info */}
-            <div className="bg-blue-500 text-white px-6 py-6 flex items-center space-x-4">
-                <div className="w-16 h-16 rounded-full overflow-hidden">
+    return (
+        <div className="min-h-screen bg-gray-100 flex flex-col pb-20">
+            {/* Header */}
+            <div className="relative">
+                {/* Banner Image */}
+                <div className="relative w-full h-56">
                     <Image
-                        src="/img/avatar.png"
-                        alt="User Avatar"
-                        width={64}
-                        height={64}
+                        src={user.banner}
+                        alt="Banner Image"
+                        fill
                         className="object-cover"
                     />
                 </div>
-                <div>
-                    <h2 className="text-lg font-bold">{user.name}</h2>
-                    <p className="text-sm">{user.phone}</p>
-                    <p className="text-sm">{user.email}</p>
-                </div>
-            </div>
 
-            {/* QR Code Section */}
-            <div className="px-6 py-4 bg-white shadow rounded-lg mt-4 mx-4">
-                <h3 className="text-sm font-semibold text-gray-500">Монпэй дансны дугаар</h3>
-                <div className="flex items-center justify-between mt-2">
-                    <span className="text-lg font-bold">{user.phone}</span>
-                    <div className="w-16 h-16">
+                {/* Logo and Username */}
+                <div className="absolute bottom-0 left-6 transform translate-y-1/2 flex items-center space-x-4">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white">
                         <Image
-                            src={user.qrCode}
-                            alt="QR Code"
-                            width={64}
-                            height={64}
-                            className="object-contain"
+                            src={user.profilePicture}
+                            alt="Profile Picture"
+                            width={80}
+                            height={80}
+                            className="object-cover"
                         />
                     </div>
-                </div>
-                <p className="text-sm text-gray-500 mt-2">
-                    IBAN дансны дугаар: {user.iban}
-                </p>
-            </div>
-
-            {/* Actions Section */}
-            <div className="mt-4 px-4">
-                <div className="bg-green-100 p-4 rounded-lg flex items-center justify-between">
-                    <span className="text-sm font-semibold">Kids Account</span>
-                    <button className="bg-black text-white py-1 px-4 rounded">
-                        Дэлгэрэнгүй
-                    </button>
+                    <div>
+                        <h1 className="text-xl font-bold text-black">{user.username}</h1>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                    </div>
                 </div>
             </div>
 
-            {/* Other Options */}
-            <div className="mt-4 px-4">
-                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold">Цахим мөнгөний гэрээ</span>
-                    <button className="text-green-500">→</button>
+            {/* Stats */}
+            <div className="bg-white shadow mt-12 mx-4 p-4 rounded-lg flex justify-around text-center">
+                <div>
+                    <p className="text-lg font-semibold">120.6К</p>
+                    <p className="text-sm text-gray-600">Таалагдсан</p>
                 </div>
-                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold">Купон</span>
-                    <button className="text-green-500">→</button>
+                <div>
+                    <p className="text-lg font-semibold">6</p>
+                    <p className="text-sm text-gray-600">Дагаж байгаа</p>
                 </div>
-                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold">Бүртгэлтэй банкны данс</span>
-                    <button className="text-green-500">→</button>
+                <div>
+                    <p className="text-lg font-semibold">239.5К</p>
+                    <p className="text-sm text-gray-600">Дагагчид</p>
                 </div>
-                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold">Дансны хуулга</span>
-                    <button className="text-green-500">→</button>
-                </div>
-                <div className="bg-white shadow rounded-lg mb-2 px-4 py-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold">Дансны нэгдсэн сан</span>
-                    <button className="text-green-500">→</button>
-                </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="bg-gray-50 flex justify-around text-center text-sm font-semibold text-gray-600 py-2 mt-4">
+                <button className="hover:text-blue-500">Бүтээлүүд</button>
+                <button className="hover:text-blue-500">Бараа бүтээгдэхүүн</button>
+                <button className="hover:text-blue-500">Үйл явдал</button>
+            </div>
+
+            {/* Posts Section */}
+            <div className="grid grid-cols-2 gap-4 p-4 flex-grow">
+                {postImages.map((image, index) => (
+                    <div
+                        key={index}
+                        className="relative w-full h-48 rounded-lg overflow-hidden shadow-sm"
+                    >
+                        <Image
+                            src={image}
+                            alt={`Post Image ${index + 1}`}
+                            fill
+                            className="object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 bg-black bg-opacity-50 text-white px-2 py-1 text-sm">
+                            <p>393 Таалагдсан</p>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Logout Button */}
-            <div className="mt-6 px-4">
+            <div className="bg-white p-4 shadow-md">
                 <button
                     onClick={() => signOut()}
-                    className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition duration-150"
+                    className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition duration-150"
                 >
                     Гарах
                 </button>
             </div>
         </div>
     );
+
 };
 
 export default ProfilePage;

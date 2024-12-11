@@ -42,12 +42,12 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-                <h1 className="text-3xl font-bold mb-6 text-center text-gray-900">Login</h1>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+            <div className="p-8 rounded-lg shadow-lg w-full max-w-md">
+                <h1 className="text-3xl font-bold mb-6 text-center">Login</h1>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="username" className="block text-sm font-medium mb-1">
                             Username or Email
                         </label>
                         <input
@@ -60,7 +60,7 @@ const LoginPage = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="password" className="block text-sm font-medium mb-1">
                             Password
                         </label>
                         <input
@@ -82,7 +82,7 @@ const LoginPage = () => {
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
-                <p className="mt-6 text-center text-gray-600">
+                <p className="mt-6 text-center">
                     Don&apos;t have an account?
                     <a href="/register" className="text-blue-600 hover:underline">
                         Sign up

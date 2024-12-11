@@ -1,18 +1,29 @@
+// models/User.ts
 import { Schema, model, models } from 'mongoose';
 
 const UserSchema = new Schema({
-    name: {
-        type: String,
-        required: true,
-    },
-    phoneNumber: {
+    username: { // Existing fields
         type: String,
         required: true,
         unique: true,
     },
-    password: {
+    email: { // Existing fields
         type: String,
         required: true,
+        unique: true,
+    },
+    phoneNumber: { // Existing fields
+        type: String,
+        required: true,
+        unique: true,
+    },
+    password: { // Existing fields
+        type: String,
+        required: true,
+    },
+    profilePicture: { // New Field
+        type: String, // URL or file path
+        default: '', // Optional: Set a default image path if desired
     },
 }, { timestamps: true });
 

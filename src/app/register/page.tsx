@@ -1,5 +1,8 @@
+// pages/register.tsx
+
 "use client";
-import { AxiosError } from 'axios'; // Import AxiosError
+
+import { AxiosError } from 'axios';
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -14,33 +17,71 @@ const Register = () => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
+    const [profilePicture, setProfilePicture] = useState<File | null>(null); // New state for profile picture
+    const [preview, setPreview] = useState<string | null>(null); // For image preview
+    const [uploadProgress, setUploadProgress] = useState<number>(0); // For upload progress
 
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        try {
-            const response = await axios.post('http://152.42.243.146:5000/api/auth/register', {
-                username,
-                phoneNumber,
-                password,
-                email, // Include email in request
-            });
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('phoneNumber', phoneNumber);
+        formData.append('password', password);
+        formData.append('email', email);
+        if (profilePicture) {
+            formData.append('profilePicture', profilePicture);
+            console.log('Profile Picture Selected:', profilePicture);
+        }
 
+        try {
+            console.log('Submitting Registration Form');
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
+
+            const response = await axios.post(`${backendUrl}/api/auth/register`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setUploadProgress(percentCompleted);
+                    }
+                },
+            });
+            console.log('Registration Response:', response);
             if (response.status === 201) {
                 alert('Registration successful!');
                 router.push('/login'); // Redirect to login page
             }
         } catch (error) {
-            const err = error as AxiosError<ErrorResponse>; // Explicitly type the Axios error
+            const err = error as AxiosError<ErrorResponse>;
             if (err.response && err.response.data) {
                 console.error('Error registering user:', err.response.data);
                 alert('Registration failed: ' + err.response.data.error);
+            } else if (err.request) {
+                console.error('No response received:', err.request);
+                alert('Registration failed: No response from server. Please try again later.');
             } else {
-                console.error('Unexpected error:', error);
-                alert('Registration failed: An unexpected error occurred. Please try again.');
+                console.error('Error setting up request:', error);
+                alert('Registration failed: ' + error);
             }
+        }
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setProfilePicture(file);
+
+            // Create a preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -51,7 +92,7 @@ const Register = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                            Нэр
+                            Username
                         </label>
                         <input
                             id="username"
@@ -60,11 +101,12 @@ const Register = () => {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"
+                            required
                         />
                     </div>
                     <div>
                         <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                            Утасны дугаар
+                            Phone Number
                         </label>
                         <input
                             id="phoneNumber"
@@ -73,6 +115,7 @@ const Register = () => {
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"
+                            required
                         />
                     </div>
                     <div>
@@ -86,31 +129,61 @@ const Register = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"
+                            required
                         />
                     </div>
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                            Нууц үг
+                            Password
                         </label>
                         <input
                             id="password"
                             type="password"
-                            placeholder="Нууц үг"
+                            placeholder="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"
+                            required
                         />
                     </div>
+                    <div>
+                        <label htmlFor="profilePicture" className="block text-sm font-medium text-gray-700 mb-1">
+                            Profile Picture
+                        </label>
+                        <input
+                            id="profilePicture"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"
+                        />
+                    </div>
+                    {preview && (
+                        <div className="flex justify-center">
+                            <img src={preview} alt="Image Preview" className="w-20 h-20 rounded-full object-cover mb-4" />
+                        </div>
+                    )}
+                    {uploadProgress > 0 && uploadProgress < 100 && (
+                        <div className="w-full bg-gray-200 rounded-full">
+                            <div
+                                className="bg-blue-600 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full"
+                                style={{ width: `${uploadProgress}%` }}
+                            >
+                                {uploadProgress}%
+                            </div>
+                        </div>
+                    )}
                     <button
                         type="submit"
                         className="w-full py-3 rounded-md text-white font-semibold bg-blue-600 hover:bg-blue-700 transition duration-300"
                     >
-                        Үрэгжлүүлэх
+                        Register
                     </button>
                 </form>
             </div>
         </div>
     );
+
 };
 
 export default Register;
