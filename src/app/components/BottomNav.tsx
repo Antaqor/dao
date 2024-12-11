@@ -1,3 +1,5 @@
+// src/app/components/BottomNav.tsx
+
 "use client";
 import React from "react";
 import {

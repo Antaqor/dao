@@ -1,4 +1,4 @@
-// pages/api/auth/[...nextauth].ts
+// src/pages/api/auth/[...nextauth].ts
 
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -11,7 +11,7 @@ export default NextAuth({
                 username: { label: "Username", type: "text", placeholder: "goku" },
                 password: { label: "Password", type: "password" },
             },
-            async authorize(credentials, req) {
+            async authorize(credentials) { // Removed 'req' parameter
                 if (!credentials) {
                     throw new Error("No credentials provided");
                 }

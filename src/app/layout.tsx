@@ -1,4 +1,4 @@
-// app/layout.tsx
+// src/app/layout.tsx
 
 "use client";
 
@@ -27,7 +27,7 @@ export default function RootLayout({
     }, []);
 
     if (isMobile === null) {
-        // Render nothing or a loader while determining
+        // Render a loader while determining
         return (
             <html lang="en" className="bg-black font-sans">
             <body className="bg-black flex items-center justify-center min-h-screen">
@@ -44,9 +44,7 @@ export default function RootLayout({
             {isMobile ? (
                 <>
                     <Header /> {/* Header added globally */}
-                    <main className="flex-grow w-full">
-                        {children} {/* Page content */}
-                    </main>
+                    <main className="flex-grow w-full">{children}</main> {/* Page content */}
                     <BottomNav /> {/* Bottom navigation */}
                 </>
             ) : (

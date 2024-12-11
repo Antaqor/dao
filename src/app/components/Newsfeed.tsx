@@ -1,5 +1,7 @@
+// src/app/components/Newsfeed.tsx
+
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { HeartIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 
@@ -45,10 +47,11 @@ const Newsfeed: React.FC = () => {
     const { data: session, status } = useSession();
     const [posts, setPosts] = useState<Post[]>([]);
     const [content, setContent] = useState<string>("");
+    const [error, setError] = useState<string | null>(null);
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001";
 
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async () => {
         try {
             const res = await fetch(`${backendUrl}/api/posts`, { credentials: "include" });
             if (!res.ok) throw new Error(`Error fetching posts: ${res.status}`);
@@ -56,8 +59,9 @@ const Newsfeed: React.FC = () => {
             setPosts(data);
         } catch (err) {
             console.error("Failed to load posts:", err);
+            setError("Failed to load posts.");
         }
-    };
+    }, [backendUrl]);
 
     const createPost = async () => {
         if (!content.trim()) return;
@@ -78,12 +82,13 @@ const Newsfeed: React.FC = () => {
             setContent("");
         } catch (err) {
             console.error("Failed to create post:", err);
+            setError("Failed to create post.");
         }
     };
 
     useEffect(() => {
         if (status === "authenticated") fetchPosts();
-    }, [session, status]);
+    }, [status, fetchPosts]);
 
     return (
         <div className="flex flex-col items-center bg-black w-full">
@@ -105,6 +110,11 @@ const Newsfeed: React.FC = () => {
                             Post
                         </button>
                     </div>
+                    {error && (
+                        <div className="text-red-400 bg-red-900 p-2 mt-2 rounded">
+                            {error}
+                        </div>
+                    )}
                 </div>
 
                 {/* Posts Section */}
