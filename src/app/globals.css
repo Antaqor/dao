@@ -1,20 +1,3 @@
-/* src/app/globals.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@layer utilities {
-    .bg-dark {
-        @apply bg-dark;
-    }
-
-    .text-light {
-        @apply text-light;
-    }
-}
-
-html,
-body {
-    @apply bg-dark text-light font-sans; /* Apply custom colors and font */
-}
