@@ -1,3 +1,5 @@
+// pages/test-backend.tsx
+
 'use client';
 
 import React, { useState } from 'react';
@@ -8,20 +10,20 @@ const TestBackendPage = () => {
 
     const testBackend = async () => {
         try {
-            const res = await fetch('http://152.42.243.146:5000/api/ping', {
+            const res = await fetch('http://152.42.243.146:5001/api/ping', {  // Updated port to 5001
                 method: 'GET',
-            }); // Replace with your backend IP or domain
+            });
 
             if (!res.ok) {
                 throw new Error(`Failed to connect to backend: ${res.statusText}`);
             }
 
-            const data: { message: string } = await res.json(); // Explicitly type the response
-            setResponse(data.message); // Assuming the backend returns `{ message: 'Pong! Backend is working.' }`
+            const data: { message: string } = await res.json();
+            setResponse(data.message);
             setError(null);
-        } catch (err: unknown) { // Use 'unknown' for better error handling
+        } catch (err: unknown) {
             if (err instanceof Error) {
-                setError(err.message); // Extract the message from the Error object
+                setError(err.message);
             } else {
                 setError('An unknown error occurred');
             }
