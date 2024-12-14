@@ -1,6 +1,8 @@
 // src/app/profile/[username]/page.tsx
 
 import Image from "next/image";
+import { use } from "react"; // use() hook for promises
+// Ensure you are on an experimental version of Next.js that supports this usage
 
 interface UserProfile {
     id: string;
@@ -10,28 +12,30 @@ interface UserProfile {
     hasProfilePicture: boolean;
 }
 
-export default async function ProfileByUsernamePage({ params }: { params: Record<string, string> }) {
-    const username = params.username;
+// We now define params as a Promise<{ username: string }> since the error states params is a promise.
+export default function ProfileByUsernamePage({ params }: { params: Promise<{ username: string }> }) {
+    // Unwrap the promise `params` using the use() hook
+    const { username } = use(params);
+
+    // Update backend URL as requested
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://152.42.243.146";
 
-    const res = await fetch(`${backendUrl}/api/users/by-username/${username}`, { cache: 'no-store' });
-    if (!res.ok) {
-        if (res.status === 404) {
-            return (
-                <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                    <p className="text-red-500 text-lg">User not found.</p>
-                </div>
-            );
-        } else {
-            return (
-                <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                    <p className="text-red-500 text-lg">Error fetching user: {res.status}</p>
-                </div>
-            );
+    // Fetch user data as a promise so we can also `use()` it
+    const userPromise = (async () => {
+        const res = await fetch(`${backendUrl}/api/users/by-username/${username}`, { cache: 'no-store' });
+        if (!res.ok) {
+            if (res.status === 404) {
+                throw new Error('NOT_FOUND');
+            } else {
+                throw new Error(`ERROR_${res.status}`);
+            }
         }
-    }
+        const data: UserProfile = await res.json();
+        return data;
+    })();
 
-    const user: UserProfile = await res.json();
+    // Unwrap the user data
+    const user = use(userPromise);
 
     const profilePicture = user.hasProfilePicture
         ? `${backendUrl}/api/auth/profile-picture/${user.id}`
@@ -42,7 +46,13 @@ export default async function ProfileByUsernamePage({ params }: { params: Record
             <div className="w-full h-56 bg-blue-600 relative">
                 <div className="absolute bottom-0 left-6 transform translate-y-1/2 flex items-center space-x-4">
                     <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white">
-                        <Image src={profilePicture} alt="Profile Picture" width={80} height={80} className="object-cover" />
+                        <Image
+                            src={profilePicture}
+                            alt="Profile Picture"
+                            width={80}
+                            height={80}
+                            className="object-cover"
+                        />
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-white">{user.username}</h1>
