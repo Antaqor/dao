@@ -1,5 +1,3 @@
-// src/types/next-auth.d.ts
-
 import "next-auth";
 
 declare module "next-auth" {
@@ -9,7 +7,8 @@ declare module "next-auth" {
             username: string;
             email: string;
             profilePicture?: string | null;
-            accessToken?: string | null; // Add token
+            accessToken?: string | null;
+            role?: string;
         };
     }
 
@@ -18,7 +17,8 @@ declare module "next-auth" {
         username: string;
         email: string;
         profilePicture?: string | null;
-        accessToken?: string | null; // Add token
+        accessToken?: string | null;
+        role?: string;
     }
 }
 
@@ -29,5 +29,6 @@ declare module "next-auth/jwt" {
         email: string;
         profilePicture?: string | null;
         accessToken?: string | null;
+        role?: string;
     }
 }

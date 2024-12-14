@@ -2,14 +2,12 @@
 
 "use client";
 
-import { AxiosError } from 'axios';
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 
-// Define a type for the expected error response
 interface ErrorResponse {
-    error: string; // Adjust this according to your API's error structure
+    error: string;
 }
 
 const Register = () => {
@@ -17,11 +15,13 @@ const Register = () => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
-    const [profilePicture, setProfilePicture] = useState<File | null>(null); // New state for profile picture
-    const [preview, setPreview] = useState<string | null>(null); // For image preview
-    const [uploadProgress, setUploadProgress] = useState<number>(0); // For upload progress
+    const [profilePicture, setProfilePicture] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+    const [role, setRole] = useState('user'); // Added role field
 
     const router = useRouter();
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -31,15 +31,12 @@ const Register = () => {
         formData.append('phoneNumber', phoneNumber);
         formData.append('password', password);
         formData.append('email', email);
+        formData.append('role', role); // Append role field
         if (profilePicture) {
             formData.append('profilePicture', profilePicture);
-            console.log('Profile Picture Selected:', profilePicture);
         }
 
         try {
-            console.log('Submitting Registration Form');
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
-
             const response = await axios.post(`${backendUrl}/api/auth/register`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -51,10 +48,10 @@ const Register = () => {
                     }
                 },
             });
-            console.log('Registration Response:', response);
+
             if (response.status === 201) {
                 alert('Registration successful!');
-                router.push('/login'); // Redirect to login page
+                router.push('/login');
             }
         } catch (error) {
             const err = error as AxiosError<ErrorResponse>;
@@ -76,7 +73,6 @@ const Register = () => {
             const file = e.target.files[0];
             setProfilePicture(file);
 
-            // Create a preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result as string);
@@ -147,8 +143,22 @@ const Register = () => {
                         />
                     </div>
                     <div>
+                        <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                            Role
+                        </label>
+                        <select
+                            id="role"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"
+                        >
+                            <option value="user">User</option>
+                            <option value="stylist">Stylist</option>
+                        </select>
+                    </div>
+                    <div>
                         <label htmlFor="profilePicture" className="block text-sm font-medium text-gray-700 mb-1">
-                            Profile Picture
+                            Profile Picture (Optional)
                         </label>
                         <input
                             id="profilePicture"
@@ -183,7 +193,6 @@ const Register = () => {
             </div>
         </div>
     );
-
 };
 
 export default Register;

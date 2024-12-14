@@ -1,5 +1,3 @@
-// src/pages/api/auth/[...nextauth].ts
-
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
@@ -11,13 +9,12 @@ export default NextAuth({
                 username: { label: "Username", type: "text", placeholder: "goku" },
                 password: { label: "Password", type: "password" },
             },
-            async authorize(credentials) { // Removed 'req' parameter
+            async authorize(credentials) {
                 if (!credentials) {
                     throw new Error("No credentials provided");
                 }
 
                 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
-
                 try {
                     const res = await fetch(`${backendUrl}/api/auth/login`, {
                         method: 'POST',
@@ -41,7 +38,8 @@ export default NextAuth({
                         username: data.user.username,
                         email: data.user.email,
                         profilePicture: data.user.profilePicture,
-                        accessToken: data.token, // Store the token
+                        accessToken: data.token,
+                        role: data.user.role || 'user',
                     };
                 } catch (error) {
                     console.error('Error during authorization:', error);
@@ -57,7 +55,8 @@ export default NextAuth({
                 token.username = user.username;
                 token.email = user.email;
                 token.profilePicture = user.profilePicture;
-                token.accessToken = user.accessToken; // Store token in JWT
+                token.accessToken = user.accessToken;
+                token.role = user.role;
             }
             return token;
         },
@@ -67,13 +66,14 @@ export default NextAuth({
                 session.user.username = token.username as string;
                 session.user.email = token.email as string;
                 session.user.profilePicture = token.profilePicture as string;
-                session.user.accessToken = token.accessToken as string; // Store token in session
+                session.user.accessToken = token.accessToken as string;
+                (session.user as any).role = token.role;
             }
             return session;
         },
     },
     pages: {
-        signIn: '/auth/login', // Custom login page
+        signIn: '/auth/login',
     },
     secret: process.env.NEXTAUTH_SECRET,
 });

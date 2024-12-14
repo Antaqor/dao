@@ -12,69 +12,39 @@ const ProfilePage: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
-        console.log("Session Data:", session); // Inspect session object
-        if (status === "loading") return; // Do nothing while loading
-        if (!session) router.push("/auth/login"); // Redirect if not authenticated
+        if (status === "loading") return;
+        if (!session) router.push("/auth/login");
     }, [session, status, router]);
 
     if (status === "loading") {
-        return <div>Loading...</div>;
+        return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
 
     if (!session) {
-        return null; // Or a loading spinner
+        return null;
     }
 
-    // Construct the profile picture URL
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001";
 
     const user = {
-        id: session.user.id,
         username: session.user.username || "Unknown User",
         email: session.user.email || "No email available",
         profilePicture: session.user.profilePicture
             ? `${backendUrl}/api/auth/profile-picture/${session.user.id}`
-            : "/img/default-user.png", // Use the profilePicture field or default
-        banner: "/img/banner.jpg",
+            : "/img/default-user.png",
     };
-
-    const postImages = [
-        "/img/post1.jpg",
-        "/img/post2.jpg",
-        "/img/post3.jpg",
-        "/img/post4.jpg",
-        "/img/post5.jpg",
-        "/img/post6.jpg",
-    ];
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col pb-20">
-            {/* Header */}
-            <div className="relative">
-                {/* Banner Image */}
-                <div className="relative w-full h-56">
-                    <Image
-                        src={user.banner}
-                        alt="Banner Image"
-                        fill
-                        className="object-cover"
-                    />
-                </div>
-
-                {/* Logo and Username */}
+            {/* Header Section */}
+            <div className="w-full h-56 bg-blue-600 relative">
                 <div className="absolute bottom-0 left-6 transform translate-y-1/2 flex items-center space-x-4">
                     <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white">
-                        <Image
-                            src={user.profilePicture}
-                            alt="Profile Picture"
-                            width={80}
-                            height={80}
-                            className="object-cover"
-                        />
+                        <Image src={user.profilePicture} alt="Profile Picture" width={80} height={80} className="object-cover" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-black">{user.username}</h1>
-                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <h1 className="text-xl font-bold text-white">{user.username}</h1>
+                        <p className="text-sm text-white/80">{user.email}</p>
                     </div>
                 </div>
             </div>
@@ -82,44 +52,29 @@ const ProfilePage: React.FC = () => {
             {/* Stats */}
             <div className="bg-white shadow mt-12 mx-4 p-4 rounded-lg flex justify-around text-center">
                 <div>
-                    <p className="text-lg font-semibold">120.6К</p>
-                    <p className="text-sm text-gray-600">Таалагдсан</p>
+                    <p className="text-lg font-semibold">120.6K</p>
+                    <p className="text-sm text-gray-600">Likes</p>
                 </div>
                 <div>
                     <p className="text-lg font-semibold">6</p>
-                    <p className="text-sm text-gray-600">Дагаж байгаа</p>
+                    <p className="text-sm text-gray-600">Following</p>
                 </div>
                 <div>
-                    <p className="text-lg font-semibold">239.5К</p>
-                    <p className="text-sm text-gray-600">Дагагчид</p>
+                    <p className="text-lg font-semibold">239.5K</p>
+                    <p className="text-sm text-gray-600">Followers</p>
                 </div>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation Tabs */}
             <div className="bg-gray-50 flex justify-around text-center text-sm font-semibold text-gray-600 py-2 mt-4">
-                <button className="hover:text-blue-500">Бүтээлүүд</button>
-                <button className="hover:text-blue-500">Бараа бүтээгдэхүүн</button>
-                <button className="hover:text-blue-500">Үйл явдал</button>
+                <button className="hover:text-blue-500">Works</button>
+                <button className="hover:text-blue-500">Products</button>
+                <button className="hover:text-blue-500">Events</button>
             </div>
 
-            {/* Posts Section */}
-            <div className="grid grid-cols-2 gap-4 p-4 flex-grow">
-                {postImages.map((image, index) => (
-                    <div
-                        key={index}
-                        className="relative w-full h-48 rounded-lg overflow-hidden shadow-sm"
-                    >
-                        <Image
-                            src={image}
-                            alt={`Post Image ${index + 1}`}
-                            fill
-                            className="object-cover"
-                        />
-                        <div className="absolute bottom-0 left-0 bg-black bg-opacity-50 text-white px-2 py-1 text-sm">
-                            <p>393 Таалагдсан</p>
-                        </div>
-                    </div>
-                ))}
+            {/* Placeholder Content */}
+            <div className="p-4 flex-grow flex flex-col items-center justify-center text-gray-500">
+                <p>User-specific content will appear here.</p>
             </div>
 
             {/* Logout Button */}
@@ -128,12 +83,11 @@ const ProfilePage: React.FC = () => {
                     onClick={() => signOut()}
                     className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition duration-150"
                 >
-                    Гарах
+                    Logout
                 </button>
             </div>
         </div>
     );
-
 };
 
 export default ProfilePage;
