@@ -10,7 +10,7 @@ const TestBackendPage = () => {
 
     const testBackend = async () => {
         try {
-            const res = await fetch('http://152.42.243.146:5001/api/ping', {  // Updated port to 5001
+            const res = await fetch('http://localhost:5001/api/ping', {  // Updated port to 5001
                 method: 'GET',
             });
 
