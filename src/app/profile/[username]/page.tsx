@@ -10,8 +10,8 @@ interface UserProfile {
     hasProfilePicture: boolean;
 }
 
-export default async function ProfileByUsernamePage({ params }: { params: { username: string } }) {
-    const { username } = params;
+export default async function ProfileByUsernamePage({ params }: { params: Record<string, string> }) {
+    const username = params.username;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001";
 
     const res = await fetch(`${backendUrl}/api/users/by-username/${username}`, { cache: 'no-store' });
@@ -39,6 +39,7 @@ export default async function ProfileByUsernamePage({ params }: { params: { user
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col pb-20">
+            {/* Header with solid blue background */}
             <div className="w-full h-56 bg-blue-600 relative">
                 <div className="absolute bottom-0 left-6 transform translate-y-1/2 flex items-center space-x-4">
                     <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white">
@@ -54,6 +55,7 @@ export default async function ProfileByUsernamePage({ params }: { params: { user
                 </div>
             </div>
 
+            {/* Stats */}
             <div className="bg-white shadow mt-12 mx-4 p-4 rounded-lg flex justify-around text-center">
                 <div>
                     <p className="text-lg font-semibold">120.6K</p>
@@ -69,12 +71,14 @@ export default async function ProfileByUsernamePage({ params }: { params: { user
                 </div>
             </div>
 
+            {/* Navigation Tabs */}
             <div className="bg-gray-50 flex justify-around text-center text-sm font-semibold text-gray-600 py-2 mt-4">
                 <button className="hover:text-blue-500">Works</button>
                 <button className="hover:text-blue-500">Products</button>
                 <button className="hover:text-blue-500">Events</button>
             </div>
 
+            {/* Placeholder Content */}
             <div className="p-4 flex-grow flex flex-col items-center justify-center text-gray-500">
                 <p>User&apos;s content or posts could be displayed here.</p>
             </div>
