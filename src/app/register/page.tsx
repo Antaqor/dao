@@ -1,10 +1,11 @@
-// pages/register.tsx
+// src/app/register/page.tsx
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, FormEvent } from 'react';
 import axios, { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface ErrorResponse {
     error: string;
@@ -18,12 +19,12 @@ const Register = () => {
     const [profilePicture, setProfilePicture] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [uploadProgress, setUploadProgress] = useState<number>(0);
-    const [role, setRole] = useState('user'); // Added role field
+    const [role, setRole] = useState('user');
 
     const router = useRouter();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         const formData = new FormData();
@@ -31,7 +32,7 @@ const Register = () => {
         formData.append('phoneNumber', phoneNumber);
         formData.append('password', password);
         formData.append('email', email);
-        formData.append('role', role); // Append role field
+        formData.append('role', role);
         if (profilePicture) {
             formData.append('profilePicture', profilePicture);
         }
@@ -48,7 +49,6 @@ const Register = () => {
                     }
                 },
             });
-
             if (response.status === 201) {
                 alert('Registration successful!');
                 router.push('/login');
@@ -170,7 +170,9 @@ const Register = () => {
                     </div>
                     {preview && (
                         <div className="flex justify-center">
-                            <img src={preview} alt="Image Preview" className="w-20 h-20 rounded-full object-cover mb-4" />
+                            <div className="w-20 h-20 rounded-full overflow-hidden mb-4">
+                                <Image src={preview} alt="Image Preview" width={80} height={80} className="object-cover" />
+                            </div>
                         </div>
                     )}
                     {uploadProgress > 0 && uploadProgress < 100 && (

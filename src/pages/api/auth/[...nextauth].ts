@@ -1,5 +1,19 @@
+// src/pages/api/auth/[...nextauth].ts
+
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+
+interface LoginResponse {
+    user: {
+        id: string;
+        username: string;
+        email: string;
+        role?: string;
+        profilePicture?: string;
+    };
+    token: string;
+    error?: string;
+}
 
 export default NextAuth({
     providers: [
@@ -27,7 +41,7 @@ export default NextAuth({
                         }),
                     });
 
-                    const data = await res.json();
+                    const data: LoginResponse = await res.json();
 
                     if (!res.ok) {
                         throw new Error(data.error || 'Failed to login');
@@ -41,7 +55,7 @@ export default NextAuth({
                         accessToken: data.token,
                         role: data.user.role || 'user',
                     };
-                } catch (error) {
+                } catch (error: unknown) {
                     console.error('Error during authorization:', error);
                     throw new Error('Failed to login');
                 }
@@ -67,7 +81,7 @@ export default NextAuth({
                 session.user.email = token.email as string;
                 session.user.profilePicture = token.profilePicture as string;
                 session.user.accessToken = token.accessToken as string;
-                (session.user as any).role = token.role;
+                (session.user as {role?: string}).role = token.role;
             }
             return session;
         },

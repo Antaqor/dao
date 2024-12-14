@@ -1,20 +1,38 @@
+// src/app/appointments/page.tsx
+
 "use client";
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+
+interface Appointment {
+    _id: string;
+    service: string;
+    date: string;
+    durationMinutes: number;
+    stylist?: { username: string };
+    status: string;
+}
+
+interface ApiError {
+    error?: string;
+    message?: string;
+    [key: string]: unknown;
+}
 
 const AppointmentPage: React.FC = () => {
     const { data: session, status } = useSession();
-    const [service, setService] = useState('');
-    const [stylistUsername, setStylistUsername] = useState('');
-    const [date, setDate] = useState('');
+    const [service, setService] = useState<string>('');
+    const [stylistUsername, setStylistUsername] = useState<string>('');
+    const [date, setDate] = useState<string>('');
     const [durationMinutes, setDurationMinutes] = useState<number>(60);
-    const [appointments, setAppointments] = useState<any[]>([]);
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
 
-    const fetchAppointments = async () => {
+    const fetchAppointments = useCallback(async () => {
         if (!session?.user?.accessToken) return;
 
         try {
@@ -24,21 +42,25 @@ const AppointmentPage: React.FC = () => {
                 },
             });
             if (!res.ok) throw new Error(`Error fetching appointments: ${res.status}`);
-            const data = await res.json();
-            setAppointments(data);
-        } catch (err: any) {
+            const data: Appointment[] | ApiError = await res.json();
+            if (Array.isArray(data)) {
+                setAppointments(data);
+            } else {
+                setError(data.error || 'Failed to load appointments.');
+            }
+        } catch (err: unknown) {
             console.error("Failed to load appointments:", err);
             setError("Failed to load appointments.");
         }
-    };
+    }, [session?.user?.accessToken, backendUrl]);
 
     const getStylistIdByUsername = async (username: string): Promise<string | null> => {
         try {
             const res = await fetch(`${backendUrl}/api/users/stylist/${username}`);
             if (!res.ok) throw new Error(`Error fetching stylist: ${res.status}`);
-            const data = await res.json();
+            const data = await res.json() as { id: string };
             return data.id;
-        } catch (err: any) {
+        } catch (err) {
             console.error("Failed to fetch stylist ID:", err);
             return null;
         }
@@ -69,9 +91,10 @@ const AppointmentPage: React.FC = () => {
                 body: JSON.stringify({ service, stylistId, date, durationMinutes }),
             });
 
-            const data = await res.json();
+            const data: Appointment | ApiError = await res.json();
             if (!res.ok) {
-                throw new Error(data.error || `Error creating appointment: ${res.status}`);
+                const errMsg = 'error' in data ? data.error : `Error creating appointment: ${res.status}`;
+                throw new Error(errMsg);
             }
 
             setMessage('Appointment created successfully!');
@@ -80,9 +103,9 @@ const AppointmentPage: React.FC = () => {
             setDate('');
             setDurationMinutes(60);
             fetchAppointments();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Failed to create appointment:", err);
-            setError("Failed to create appointment. " + (err.message || ''));
+            setError("Failed to create appointment.");
         }
     };
 
@@ -90,7 +113,7 @@ const AppointmentPage: React.FC = () => {
         if (status === 'authenticated') {
             fetchAppointments();
         }
-    }, [status]);
+    }, [status, fetchAppointments]);
 
     if (status === 'loading') {
         return (
@@ -171,7 +194,7 @@ const AppointmentPage: React.FC = () => {
             <h2 className="text-xl mt-8 mb-4">Your Appointments</h2>
             {appointments.length > 0 ? (
                 <div className="space-y-4">
-                    {appointments.map((appt: any) => (
+                    {appointments.map((appt) => (
                         <div key={appt._id} className="bg-gray-800 p-4 rounded-md">
                             <p className="text-white font-semibold">{appt.service}</p>
                             <p className="text-gray-400 text-sm">

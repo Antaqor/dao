@@ -2,31 +2,47 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
+interface Notification {
+    _id: string;
+    message: string;
+    createdAt: string;
+    read: boolean;
+}
+
+interface ApiError {
+    error?: string;
+    [key: string]: unknown;
+}
+
 const NotificationsPage: React.FC = () => {
     const { data: session, status } = useSession();
-    const [notifications, setNotifications] = useState<any[]>([]);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         if (!session?.user?.accessToken) return;
         try {
             const res = await fetch(`${backendUrl}/api/notifications`, {
                 headers: { Authorization: `Bearer ${session.user.accessToken}` },
             });
             if (!res.ok) throw new Error(`Error fetching notifications: ${res.status}`);
-            const data = await res.json();
-            setNotifications(data);
-        } catch (err: any) {
+            const data: Notification[] | ApiError = await res.json();
+            if (Array.isArray(data)) {
+                setNotifications(data);
+            } else {
+                setError(data.error || 'Failed to load notifications.');
+            }
+        } catch (err) {
             console.error("Failed to load notifications:", err);
             setError("Failed to load notifications.");
         }
-    };
+    }, [session?.user?.accessToken, backendUrl]);
 
     const markAllRead = async () => {
         if (!session?.user?.accessToken) return;
@@ -37,7 +53,7 @@ const NotificationsPage: React.FC = () => {
             });
             if (!res.ok) throw new Error(`Error marking notifications as read: ${res.status}`);
             setNotifications((prev) => prev.map(n => ({ ...n, read: true })));
-        } catch (err: any) {
+        } catch (err) {
             console.error("Failed to mark notifications as read:", err);
             setError("Failed to mark notifications as read.");
         }
@@ -47,7 +63,7 @@ const NotificationsPage: React.FC = () => {
         if (status === 'authenticated') {
             fetchNotifications();
         }
-    }, [status]);
+    }, [status, fetchNotifications]);
 
     if (status === 'loading') {
         return (
@@ -65,7 +81,7 @@ const NotificationsPage: React.FC = () => {
         );
     }
 
-    const isStylist = (session?.user as any)?.role === 'stylist';
+    const isStylist = (session?.user as {role?: string})?.role === 'stylist';
 
     return (
         <div className="bg-black min-h-screen text-white p-4">
@@ -75,7 +91,6 @@ const NotificationsPage: React.FC = () => {
                 Mark All as Read
             </button>
 
-            {/* If the user is a stylist, show a button to go to stylist's pending appointments (orders) */}
             {isStylist && (
                 <Link href="/stylist/pending">
                     <button className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-md mb-4 block">

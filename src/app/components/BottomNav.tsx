@@ -1,6 +1,10 @@
+// src/app/components/BottomNav.tsx
+
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from 'next/navigation';
 import {
     HomeIcon,
     PlusCircleIcon,
@@ -8,32 +12,40 @@ import {
     UserCircleIcon,
     Squares2X2Icon,
 } from "@heroicons/react/24/outline";
-import { useRouter } from 'next/navigation';
+
+interface Notification {
+    _id: string;
+    message: string;
+    createdAt: string;
+    read: boolean;
+}
 
 const BottomNav: React.FC = () => {
     const { data: session } = useSession();
-    const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadCount, setUnreadCount] = useState<number>(0);
     const router = useRouter();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
 
-    const fetchUnreadCount = async () => {
+    const fetchUnreadCount = useCallback(async () => {
         if (!session?.user?.accessToken) return;
         try {
             const res = await fetch(`${backendUrl}/api/notifications`, {
                 headers: { Authorization: `Bearer ${session.user.accessToken}` },
             });
             if (!res.ok) return;
-            const data = await res.json();
-            const unread = data.filter((notif: any) => !notif.read).length;
+            const data: Notification[] = await res.json();
+            const unread = data.filter((notif) => !notif.read).length;
             setUnreadCount(unread);
         } catch (err) {
             console.error('Failed to fetch notifications count:', err);
         }
-    };
+    }, [session?.user?.accessToken, backendUrl]);
 
     useEffect(() => {
         fetchUnreadCount();
-    }, [session]);
+    }, [fetchUnreadCount]);
+
+    const isStylist = (session?.user as {role?: string})?.role === 'stylist';
 
     return (
         <nav className="fixed bottom-0 w-full bg-[#121212] border-t border-gray-700 z-50">
@@ -73,6 +85,15 @@ const BottomNav: React.FC = () => {
                 >
                     <UserCircleIcon className="h-6 w-6" />
                 </button>
+
+                {isStylist && (
+                    <button
+                        className="flex items-center justify-center text-gray-400 hover:text-white transition"
+                        onClick={() => router.push('/stylist/pending')}
+                    >
+                        <span className="text-white font-bold text-xs ml-2">Orders</span>
+                    </button>
+                )}
             </div>
         </nav>
     );
