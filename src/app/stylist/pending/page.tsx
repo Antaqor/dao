@@ -26,7 +26,7 @@ const StylistPendingAppointments: React.FC = () => {
     const [message, setMessage] = useState<string | null>(null);
     const [rescheduleDate, setRescheduleDate] = useState<string>('');
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://152.42.243.146:5001';
 
     const fetchPendingAppointments = useCallback(async () => {
         if (!session?.user?.accessToken) return;

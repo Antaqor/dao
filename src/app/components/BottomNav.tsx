@@ -24,7 +24,7 @@ const BottomNav: React.FC = () => {
     const { data: session } = useSession();
     const [unreadCount, setUnreadCount] = useState<number>(0);
     const router = useRouter();
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://152.42.243.146:5001';
 
     const fetchUnreadCount = useCallback(async () => {
         if (!session?.user?.accessToken) return;

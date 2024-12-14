@@ -28,7 +28,7 @@ export default NextAuth({
                     throw new Error("No credentials provided");
                 }
 
-                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5001';
+                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://152.42.243.146:5001';
                 try {
                     const res = await fetch(`${backendUrl}/api/auth/login`, {
                         method: 'POST',

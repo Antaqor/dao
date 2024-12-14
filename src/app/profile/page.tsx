@@ -24,7 +24,7 @@ const ProfilePage: React.FC = () => {
         return null;
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5001";
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://152.42.243.146:5001";
 
     const user = {
         username: session.user.username || "Unknown User",
