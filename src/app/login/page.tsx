@@ -1,9 +1,8 @@
 // src/app/login/page.tsx
-
 "use client";
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation'; // Use next/navigation for new router handling
+import { useRouter } from 'next/navigation';
 
 const LoginPage = () => {
     const [username, setUsername] = useState<string>('');
@@ -22,14 +21,14 @@ const LoginPage = () => {
                 password,
             });
 
-            console.log('Result:', result); // Log result to see the structure
+            console.log('Result:', result);
 
             if (result?.error) {
                 console.error('Login failed:', result.error);
                 alert(`Login failed: ${result.error || 'Unknown error'}`);
             } else if (result?.ok) {
                 alert('Login successful!');
-                router.push('/'); // Redirect to root path after successful login
+                router.push('/');
             } else {
                 alert('Unexpected login response.');
             }
@@ -42,12 +41,12 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-            <div className="p-8 rounded-lg shadow-lg w-full max-w-md">
-                <h1 className="text-3xl font-bold mb-6 text-center">Login</h1>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+                <h1 className="text-3xl font-bold mb-6 text-center text-gray-900">Login</h1>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label htmlFor="username" className="block text-sm font-medium mb-1">
+                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
                             Username or Email
                         </label>
                         <input
@@ -60,7 +59,7 @@ const LoginPage = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium mb-1">
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                             Password
                         </label>
                         <input
@@ -82,7 +81,7 @@ const LoginPage = () => {
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
-                <p className="mt-6 text-center">
+                <p className="mt-6 text-center text-gray-600">
                     Don&apos;t have an account?
                     <a href="/register" className="text-blue-600 hover:underline">
                         Sign up

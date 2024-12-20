@@ -4,23 +4,22 @@
 
 import React from 'react';
 import { useSession } from 'next-auth/react';
-import Newsfeed from './components/Newsfeed';
 
 const HomePage = () => {
     const { data: session, status } = useSession();
 
     if (status === 'loading') {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-black">
-                <p className="text-xl text-white">Loading...</p>
+            <div className="flex items-center justify-center min-h-screen bg-white">
+                <p className="text-xl text-black">Loading...</p>
             </div>
         );
     }
 
     if (status === 'unauthenticated') {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-black">
-                <h1 className="font-bold text-white mb-6">
+            <div className="flex items-center justify-center min-h-screen bg-white">
+                <h1 className="font-bold text-black mb-6">
                     Hi! Тавтай морил! Vone DAO
                 </h1>
             </div>
@@ -29,8 +28,8 @@ const HomePage = () => {
 
     if (status === 'authenticated' && session) {
         return (
-            <div className="w-full bg-black">
-                <Newsfeed />
+            <div className="w-full">
+           Hi
             </div>
         );
     }

@@ -1,8 +1,9 @@
+// src/app/components/Header.tsx
+
+"use client";
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import logo from '../img/logo.svg';
-import Image from 'next/image';
 import { FaSun, FaMoon, FaCloudSun } from 'react-icons/fa';
 
 const Header: React.FC = () => {
@@ -26,12 +27,12 @@ const Header: React.FC = () => {
     return (
         <header className="bg-black text-white shadow-md sticky top-0 z-50">
             <div className="container mx-auto flex justify-between items-center px-6 py-3">
-                {/* Logo */}
+                {/* Logo as Text */}
                 <div
                     className="flex items-center cursor-pointer"
                     onClick={() => router.push('/')}
                 >
-                    <Image src={logo} alt="Logo" className="h-8 w-auto object-contain" />
+                    <span className="text-2xl font-bold">Vone</span>
                 </div>
 
                 {/* Greeting and User Profile */}
@@ -43,7 +44,7 @@ const Header: React.FC = () => {
                             <span className="text-sm font-semibold">{greeting.text}</span>
                         </div>
                         {session?.user?.username && (
-                            <span className="text-xs text-gray-400">{session.user.username}</span>
+                            <span className="text-xs text-gray-600">{session.user.username}</span>
                         )}
                     </div>
                 </div>

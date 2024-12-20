@@ -1,93 +1,74 @@
 // src/pages/api/auth/[...nextauth].ts
+import NextAuth, { AuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import axios, { AxiosError } from 'axios';
 
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-
-interface LoginResponse {
-    user: {
-        id: string;
-        username: string;
-        email: string;
-        role?: string;
-        profilePicture?: string;
-    };
-    token: string;
-    error?: string;
-}
-
-export default NextAuth({
+export const authOptions: AuthOptions = {
     providers: [
         CredentialsProvider({
-            name: "Credentials",
+            name: 'Credentials',
             credentials: {
-                username: { label: "Username", type: "text", placeholder: "goku" },
-                password: { label: "Password", type: "password" },
+                username: { label: 'Username', type: 'text', placeholder: 'Username' },
+                password: { label: 'Password', type: 'password', placeholder: 'Password' },
             },
             async authorize(credentials) {
-                if (!credentials) {
-                    throw new Error("No credentials provided");
-                }
-
-                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://152.42.243.146:5001';
                 try {
-                    const res = await fetch(`${backendUrl}/api/auth/login`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            username: credentials.username,
-                            password: credentials.password,
-                        }),
-                    });
+                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://152.42.243.146:5000';
 
-                    const data: LoginResponse = await res.json();
-
-                    if (!res.ok) {
-                        throw new Error(data.error || 'Failed to login');
+                    if (!backendUrl) {
+                        throw new Error('Backend URL is not defined. Please set NEXT_PUBLIC_BACKEND_API_URL in your environment variables.');
                     }
 
-                    return {
-                        id: data.user.id,
-                        username: data.user.username,
-                        email: data.user.email,
-                        profilePicture: data.user.profilePicture,
-                        accessToken: data.token,
-                        role: data.user.role || 'user',
-                    };
-                } catch (error: unknown) {
-                    console.error('Error during authorization:', error);
-                    throw new Error('Failed to login');
+                    const response = await axios.post(`${backendUrl}/api/auth/login`, {
+                        username: credentials?.username,
+                        password: credentials?.password,
+                    });
+
+                    if (response.status === 200 && response.data.user) {
+                        const user = response.data.user;
+                        return user;
+                    } else {
+                        console.error('Login failed:', response.data?.error || 'Unknown error');
+                        return null;
+                    }
+                } catch (error) {
+                    const axiosError = error as AxiosError<{ error: string }>;
+                    if (axiosError.response?.data?.error) {
+                        console.error('Authorization error:', axiosError.response.data.error);
+                    } else {
+                        console.error('Unexpected error during authorization:', axiosError.message);
+                    }
+                    return null;
                 }
             },
         }),
     ],
+    secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.username = user.username;
                 token.email = user.email;
-                token.profilePicture = user.profilePicture;
-                token.accessToken = user.accessToken;
-                token.role = user.role;
+                token.username = user.username;
+                token.role = user.role || 'user';
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string;
-                session.user.username = token.username as string;
                 session.user.email = token.email as string;
-                session.user.profilePicture = token.profilePicture as string;
-                session.user.accessToken = token.accessToken as string;
-                (session.user as {role?: string}).role = token.role;
+                session.user.username = token.username as string;
+                session.user.role = token.role as string;
             }
             return session;
         },
     },
     pages: {
         signIn: '/auth/login',
+        error: '/auth/error',
     },
-    secret: process.env.NEXTAUTH_SECRET,
-});
+    debug: process.env.NODE_ENV === 'development',
+};
+
+export default NextAuth(authOptions);

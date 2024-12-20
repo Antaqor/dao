@@ -2,10 +2,10 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { SessionProvider } from "next-auth/react";
 import Header from "./components/Header";
-import BottomNav from "./components/BottomNav";
+import Footer from "./components/Footer";
 import "../app/globals.css";
 
 export default function RootLayout({
@@ -13,47 +13,17 @@ export default function RootLayout({
                                    }: {
     children: React.ReactNode;
 }): JSX.Element {
-    const [isMobile, setIsMobile] = useState<boolean | null>(null);
-
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
-
-        handleResize(); // Check on mount
-
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-
-    if (isMobile === null) {
-        // Render a loader while determining
-        return (
-            <html lang="en" className="bg-black font-sans">
-            <body className="bg-black flex items-center justify-center min-h-screen">
-            <p className="text-white text-xl">Loading...</p>
-            </body>
-            </html>
-        );
-    }
-
     return (
-        <html lang="en" className="bg-black font-sans">
-        <body className="bg-black">
+        <html lang="en">
+        <body className="font-sans bg-white text-black">
         <SessionProvider>
-            {isMobile ? (
-                <>
-                    <Header /> {/* Header added globally */}
-                    <main className="flex-grow w-full">{children}</main> {/* Page content */}
-                    <BottomNav /> {/* Bottom navigation */}
-                </>
-            ) : (
-                <div className="flex items-center justify-center min-h-screen">
-                    <p className="text-white text-xl">
-                        This website is for mobile users only.
-                    </p>
-                </div>
-            )}
+            <div className="flex flex-col min-h-screen">
+                <Header />
+                <main className="flex-grow p-4">
+                    {children}
+                </main>
+                <Footer />
+            </div>
         </SessionProvider>
         </body>
         </html>
