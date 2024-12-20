@@ -1,4 +1,3 @@
-// src/app/login/page.tsx
 "use client";
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
@@ -9,6 +8,8 @@ const LoginPage = () => {
     const [password, setPassword] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
+
+    const backendUrl = "http://152.42.243.146:5001";
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();

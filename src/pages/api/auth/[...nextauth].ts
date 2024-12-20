@@ -1,4 +1,3 @@
-// src/pages/api/auth/[...nextauth].ts
 import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import axios, { AxiosError } from 'axios';
@@ -13,11 +12,7 @@ export const authOptions: AuthOptions = {
             },
             async authorize(credentials) {
                 try {
-                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://152.42.243.146:5001';
-
-                    if (!backendUrl) {
-                        throw new Error('Backend URL is not defined. Please set NEXT_PUBLIC_BACKEND_API_URL in your environment variables.');
-                    }
+                    const backendUrl = 'http://152.42.243.146:5001'; // Hardcoded backend URL
 
                     const response = await axios.post(`${backendUrl}/api/auth/login`, {
                         username: credentials?.username,
@@ -26,7 +21,7 @@ export const authOptions: AuthOptions = {
 
                     if (response.status === 200 && response.data.user) {
                         const user = response.data.user;
-                        return user;
+                        return user; // Returning the user object if login is successful
                     } else {
                         console.error('Login failed:', response.data?.error || 'Unknown error');
                         return null;
@@ -43,7 +38,7 @@ export const authOptions: AuthOptions = {
             },
         }),
     ],
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: 'O29TGmtAuAqOdLWWsZxIZ6nh5lmywlSq06qAKT27UgA=', // Hardcoded NextAuth secret
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
