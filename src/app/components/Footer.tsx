@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
                         About
                     </Link>
                     <Link href="/contact" className="hover:underline">
-                        Contact
+                        Contactt
                     </Link>
                     <Link href="/privacy" className="hover:underline">
                         Privacy Policy
