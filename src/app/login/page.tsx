@@ -9,7 +9,6 @@ const LoginPage = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
 
-    const backendUrl = "http://152.42.243.146:5001";
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -48,7 +47,7 @@ const LoginPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                            Username or Email
+                            Username or Email t
                         </label>
                         <input
                             id="username"
