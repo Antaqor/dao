@@ -15,7 +15,7 @@ export default function Header() {
     return (
         <header className="bg-black text-white p-4 flex justify-between items-center">
             <div onClick={() => router.push("/")} className="cursor-pointer font-bold text-xl">
-                My Salon
+                Baba
             </div>
             <div className="space-x-3">
                 {/* Public Link to /salons */}

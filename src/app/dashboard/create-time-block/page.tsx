@@ -1,6 +1,7 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 
 interface Service {
@@ -13,66 +14,148 @@ interface Stylist {
     name: string;
 }
 
+interface SalonResponse {
+    _id: string;
+    name: string;
+    location: string;
+}
+
+interface CreateTimeBlockResponse {
+    message: string;
+}
+
 export default function CreateTimeBlockPage() {
     const { data: session } = useSession();
     const [services, setServices] = useState<Service[]>([]);
     const [stylists, setStylists] = useState<Stylist[]>([]);
-    const [serviceId, setServiceId] = useState("");
-    const [stylistId, setStylistId] = useState("");
-    const [label, setLabel] = useState("Morning");
-    const [timesStr, setTimesStr] = useState(""); // comma separated
-    const [message, setMessage] = useState("");
+    const [serviceId, setServiceId] = useState<string>("");
+    const [stylistId, setStylistId] = useState<string>("");
+    const [label, setLabel] = useState<string>("Morning");
+    const [timesStr, setTimesStr] = useState<string>(""); // comma separated
+    const [message, setMessage] = useState<string>("");
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     useEffect(() => {
-        // fetch the owner's salon -> get services, stylists
+        // Fetch the owner's salon data, including services and stylists
         const fetchOwnerData = async () => {
             if (!session?.user?.accessToken) return;
             try {
                 const token = session.user.accessToken;
-                const salonRes = await axios.get("http://localhost:5001/api/salons/my-salon", {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+
+                // Fetch salon information
+                const salonRes = await axios.get<SalonResponse>(
+                    "http://localhost:5001/api/salons/my-salon",
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
                 const salonId = salonRes.data._id;
 
-                // get services
-                const servRes = await axios.get(`http://localhost:5001/api/services/salon/${salonId}`);
+                // Fetch services associated with the salon
+                const servRes = await axios.get<Service[]>(
+                    `http://localhost:5001/api/services/salon/${salonId}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
                 setServices(servRes.data);
 
-                // get stylists
-                const styRes = await axios.get(`http://localhost:5001/api/stylists/salon/${salonId}`);
+                // Fetch stylists associated with the salon
+                const styRes = await axios.get<Stylist[]>(
+                    `http://localhost:5001/api/stylists/salon/${salonId}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
                 setStylists(styRes.data);
-
-            } catch (err: any) {
-                console.error("Error loading owner data:", err);
-                setMessage("Failed to load services/stylists.");
+            } catch (error: unknown) {
+                if (axios.isAxiosError(error)) {
+                    const axiosError = error as AxiosError<{ error: string }>;
+                    setMessage(axiosError.response?.data.error || "Failed to load services/stylists.");
+                } else {
+                    setMessage("An unexpected error occurred.");
+                }
+                console.error("Error loading owner data:", error);
             }
         };
         fetchOwnerData();
     }, [session]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Validate the times string format
+    const validateTimes = (times: string[]): boolean => {
+        const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i;
+        return times.every(time => timeRegex.test(time));
+    };
+
+    // Handle form submission to add a time block
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setMessage("");
+
         if (!session?.user?.accessToken) {
             setMessage("Please log in as owner.");
             return;
         }
+
+        if (!serviceId) {
+            setMessage("Please select a service.");
+            return;
+        }
+
+        if (!label.trim()) {
+            setMessage("Block label is required.");
+            return;
+        }
+
+        const timesArr = timesStr.split(",").map(t => t.trim()).filter(t => t !== "");
+
+        if (timesArr.length === 0) {
+            setMessage("Please provide at least one valid time.");
+            return;
+        }
+
+        if (!validateTimes(timesArr)) {
+            setMessage("Please enter times in the format HH:MM AM/PM.");
+            return;
+        }
+
+        setIsSubmitting(true);
+
         try {
             const token = session.user.accessToken;
-            const timesArr = timesStr.split(",").map(t => t.trim());
-            const res = await axios.post("http://localhost:5001/api/services/my-service/time-block", {
-                serviceId,
-                stylistId: stylistId || null,
-                label,
-                times: timesArr
-            },{
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.status === 200) {
-                setMessage("Time block added!");
+            const response = await axios.post<CreateTimeBlockResponse>(
+                "http://localhost:5001/api/services/my-service/time-block",
+                {
+                    serviceId,
+                    stylistId: stylistId || null,
+                    label: label.trim(),
+                    times: timesArr,
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            if (response.status === 200 || response.status === 201) {
+                setMessage("Time block added successfully!");
+                // Reset form fields
+                setServiceId("");
+                setStylistId("");
+                setLabel("Morning");
+                setTimesStr("");
+            } else {
+                setMessage("Failed to add time block. Please try again.");
             }
-        } catch (err: any) {
-            console.error(err);
-            setMessage(err.response?.data?.error || "Error adding time block");
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                const axiosError = error as AxiosError<{ error: string }>;
+                setMessage(axiosError.response?.data.error || "Error adding time block.");
+            } else {
+                setMessage("An unexpected error occurred.");
+            }
+            console.error("Error adding time block:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -83,59 +166,87 @@ export default function CreateTimeBlockPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block font-semibold">Select Service</label>
+                    <label htmlFor="serviceSelect" className="block font-semibold">
+                        Select Service
+                    </label>
                     <select
+                        id="serviceSelect"
                         value={serviceId}
                         onChange={e => setServiceId(e.target.value)}
                         className="border p-2 w-full rounded"
+                        required
                     >
                         <option value="">-- choose service --</option>
-                        {services.map(s => (
-                            <option key={s._id} value={s._id}>{s.name}</option>
+                        {services.map(service => (
+                            <option key={service._id} value={service._id}>
+                                {service.name}
+                            </option>
                         ))}
                     </select>
                 </div>
 
                 <div>
-                    <label className="block font-semibold">Select Stylist (optional)</label>
+                    <label htmlFor="stylistSelect" className="block font-semibold">
+                        Select Stylist (optional)
+                    </label>
                     <select
+                        id="stylistSelect"
                         value={stylistId}
                         onChange={e => setStylistId(e.target.value)}
                         className="border p-2 w-full rounded"
                     >
                         <option value="">No stylist (global)</option>
-                        {stylists.map(st => (
-                            <option key={st._id} value={st._id}>{st.name}</option>
+                        {stylists.map(stylist => (
+                            <option key={stylist._id} value={stylist._id}>
+                                {stylist.name}
+                            </option>
                         ))}
                     </select>
                 </div>
 
                 <div>
-                    <label className="block font-semibold">Block Label</label>
+                    <label htmlFor="blockLabel" className="block font-semibold">
+                        Block Label
+                    </label>
                     <select
+                        id="blockLabel"
                         value={label}
                         onChange={e => setLabel(e.target.value)}
                         className="border p-2 w-full rounded"
+                        required
                     >
                         <option value="Morning">Morning</option>
                         <option value="Afternoon">Afternoon</option>
                         <option value="Evening">Evening</option>
+                        <option value="Custom">Custom</option>
                     </select>
                 </div>
 
                 <div>
-                    <label className="block font-semibold">Times (comma separated)</label>
+                    <label htmlFor="timesStr" className="block font-semibold">
+                        Times (comma separated)
+                    </label>
                     <input
+                        id="timesStr"
                         type="text"
                         placeholder="e.g. 09:00 AM,09:15 AM"
                         value={timesStr}
                         onChange={e => setTimesStr(e.target.value)}
                         className="border p-2 w-full rounded"
+                        required
                     />
                 </div>
 
-                <button type="submit" className="bg-purple-600 text-white px-4 py-2 rounded">
-                    Add Time Block
+                <button
+                    type="submit"
+                    className={`bg-purple-600 text-white px-4 py-2 rounded ${
+                        isSubmitting
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-purple-700"
+                    } transition-colors`}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? "Adding..." : "Add Time Block"}
                 </button>
             </form>
         </div>

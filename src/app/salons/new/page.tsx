@@ -1,13 +1,25 @@
 "use client";
+
 import React, { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+// Interface for the successful salon creation response
+interface CreateSalonResponse {
+    message: string;
+    // Add other response fields if necessary
+}
+
+// Interface for the error response from the server
+interface ErrorResponse {
+    error: string;
+}
+
 export default function NewSalonPage() {
-    const [name, setName] = useState("");
-    const [location, setLocation] = useState("");
-    const [message, setMessage] = useState("");
+    const [name, setName] = useState<string>("");
+    const [location, setLocation] = useState<string>("");
+    const [message, setMessage] = useState<string>("");
 
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -24,31 +36,39 @@ export default function NewSalonPage() {
         );
     }
 
+    // Handle form submission to create a new salon
     const handleCreateSalon = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setMessage("");
 
         try {
-            const response = await axios.post(
-                "http://localhost:5001/api/salons", // Using raw localhost:5001
+            const response = await axios.post<CreateSalonResponse>(
+                "http://localhost:5001/api/salons",
                 { name, location },
                 {
                     headers: {
-                        Authorization: `Bearer ${session.user.accessToken}`
+                        Authorization: `Bearer ${session.user.accessToken}`,
                     },
                 }
             );
 
             if (response.status === 201) {
                 setMessage("Salon created successfully!");
+                // Redirect to the salons page after a short delay
                 setTimeout(() => {
                     router.push("/salons");
                 }, 2000);
+            } else {
+                setMessage("Failed to create salon. Please try again.");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                const axiosError = error as AxiosError<ErrorResponse>;
+                setMessage(axiosError.response?.data.error || "An error occurred.");
+            } else {
+                setMessage("An unexpected error occurred.");
+            }
             console.error("Error creating salon:", error);
-            const errMsg = error.response?.data?.error || "An error occurred.";
-            setMessage(errMsg);
         }
     };
 
@@ -57,8 +77,11 @@ export default function NewSalonPage() {
             <h1 className="text-2xl font-bold mb-4">Create a New Salon</h1>
             <form onSubmit={handleCreateSalon} className="space-y-4">
                 <div>
-                    <label className="block mb-1 font-semibold">Salon Name</label>
+                    <label htmlFor="salonName" className="block mb-1 font-semibold">
+                        Salon Name
+                    </label>
                     <input
+                        id="salonName"
                         type="text"
                         className="w-full border rounded p-2"
                         placeholder="e.g., Stylish Cuts"
@@ -68,8 +91,11 @@ export default function NewSalonPage() {
                     />
                 </div>
                 <div>
-                    <label className="block mb-1 font-semibold">Location</label>
+                    <label htmlFor="salonLocation" className="block mb-1 font-semibold">
+                        Location
+                    </label>
                     <input
+                        id="salonLocation"
                         type="text"
                         className="w-full border rounded p-2"
                         placeholder="e.g., 123 Main Street"
@@ -80,7 +106,7 @@ export default function NewSalonPage() {
                 </div>
                 <button
                     type="submit"
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
                 >
                     Create Salon
                 </button>

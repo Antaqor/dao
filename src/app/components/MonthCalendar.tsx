@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import React from "react";
 
 interface MonthCalendarProps {
     year: number;
@@ -21,51 +22,51 @@ export default function MonthCalendar({
                                           onSelectDate,
                                           highlightedDays = {},
                                       }: MonthCalendarProps) {
-    // Calculate the days in the month
+    // Calculate the first and last day of the month
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
     const daysInMonth = lastDayOfMonth.getDate();
 
-    // dayOfWeek = 0 (Sun) through 6 (Sat)
+    // Determine the starting day of the week (0=Sun, 6=Sat)
     const startDay = firstDayOfMonth.getDay();
 
-    // Create an array to hold day numbers, and we will offset them by startDay
-    const daysArray = [...Array(daysInMonth)].map((_, i) => i + 1);
+    // Generate an array of day numbers for the month
+    const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-    // We'll show the month name
+    // Get the month's name for display
     const monthName = firstDayOfMonth.toLocaleString('default', { month: 'long' });
 
     return (
-        <div>
-            <p className="text-lg font-bold text-center">{monthName} {year}</p>
+        <div className="p-4">
+            <p className="text-lg font-bold text-center">{`${monthName} ${year}`}</p>
 
             <div className="grid grid-cols-7 gap-2 mt-2 text-center">
-                {/* Weekday headings */}
-                {["S", "M", "T", "W", "T", "F", "S"].map((w) => (
-                    <div key={w} className="font-semibold">{w}</div>
+                {/* Weekday headers */}
+                {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
+                    <div key={day} className="font-semibold">
+                        {day}
+                    </div>
                 ))}
 
-                {/* Blank spaces before the first day */}
-                {Array.from({ length: startDay }).map((_, i) => (
-                    <div key={`blank-${i}`} />
+                {/* Empty cells for days before the first of the month */}
+                {Array.from({ length: startDay }).map((_, index) => (
+                    <div key={`empty-${index}`} />
                 ))}
 
-                {/* Actual days */}
+                {/* Render each day of the month */}
                 {daysArray.map((day) => {
-                    const dateObj = new Date(year, month, day);
-                    const isSelected = selectedDate
-                        && dateObj.toDateString() === selectedDate.toDateString();
-
-                    // if day in highlightedDays, we mark it
+                    const currentDate = new Date(year, month, day);
+                    const isSelected =
+                        selectedDate?.toDateString() === currentDate.toDateString();
                     const highlight = highlightedDays[day];
 
                     return (
                         <button
                             key={day}
-                            onClick={() => onSelectDate(dateObj)}
+                            onClick={() => onSelectDate(currentDate)}
                             className={`p-2 border rounded ${
                                 isSelected ? "bg-blue-600 text-white" : "bg-white"
-                            }`}
+                            } hover:bg-gray-100`}
                         >
                             <span className="block">{day}</span>
                             {highlight === 'fast' && (

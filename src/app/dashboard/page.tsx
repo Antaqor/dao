@@ -1,57 +1,99 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+
+// Define interfaces for typed state
+interface SalonData {
+    _id: string;
+    name: string;
+    location: string;
+}
+
+interface ServiceData {
+    _id: string;
+    name: string;
+    durationMinutes: number;
+    price: number;
+}
+
+interface StylistData {
+    _id: string;
+    name: string;
+}
+
+interface AppointmentData {
+    _id: string;
+    date: string;
+    startTime: string;
+    service?: {
+        name: string;
+    };
+    user?: {
+        username: string;
+    };
+}
 
 export default function DashboardPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const [salon, setSalon] = useState<any>(null);
-    const [services, setServices] = useState<any[]>([]);
-    const [stylists, setStylists] = useState<any[]>([]);
-    const [appointments, setAppointments] = useState<any[]>([]);
+
+    const [salon, setSalon] = useState<SalonData | null>(null);
+    const [services, setServices] = useState<ServiceData[]>([]);
+    const [stylists, setStylists] = useState<StylistData[]>([]);
+    const [appointments, setAppointments] = useState<AppointmentData[]>([]);
     const [error, setError] = useState("");
 
+    // Redirect unauthenticated users
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/auth/login");
         }
     }, [status, router]);
 
+    // Load dashboard data
     useEffect(() => {
         const fetchData = async () => {
             try {
                 if (session?.user?.accessToken && session.user.role === "owner") {
                     const token = session.user.accessToken;
 
-                    // get owner salon
+                    // Owner's salon
                     const salonRes = await axios.get("http://localhost:5001/api/salons/my-salon", {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${token}` },
                     });
                     setSalon(salonRes.data);
 
-                    // get services
-                    const servRes = await axios.get(`http://localhost:5001/api/services/salon/${salonRes.data._id}`);
+                    // Services
+                    const servRes = await axios.get<ServiceData[]>(
+                        `http://localhost:5001/api/services/salon/${salonRes.data._id}`
+                    );
                     setServices(servRes.data);
 
-                    // get stylists
-                    const styRes = await axios.get(`http://localhost:5001/api/stylists/salon/${salonRes.data._id}`);
+                    // Stylists
+                    const styRes = await axios.get<StylistData[]>(
+                        `http://localhost:5001/api/stylists/salon/${salonRes.data._id}`
+                    );
                     setStylists(styRes.data);
 
-                    // gather appointments for each service
-                    let allAppointments: any[] = [];
-                    for (let svc of servRes.data) {
-                        const aRes = await axios.get(`http://localhost:5001/api/appointments?serviceId=${svc._id}`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
+                    // Appointments for each service
+                    let allAppointments: AppointmentData[] = [];
+                    for (const svc of servRes.data) {
+                        const aRes = await axios.get<AppointmentData[]>(
+                            `http://localhost:5001/api/appointments?serviceId=${svc._id}`,
+                            { headers: { Authorization: `Bearer ${token}` } }
+                        );
                         allAppointments = allAppointments.concat(aRes.data);
                     }
                     setAppointments(allAppointments);
-
                 }
-            } catch (err: any) {
-                console.error("Error loading dashboard:", err);
+            } catch (err: unknown) {
+                if (err instanceof AxiosError) {
+                    console.error("Error loading dashboard:", err.message);
+                } else {
+                    console.error("Error loading dashboard:", err);
+                }
                 setError("Failed to load dashboard data.");
             }
         };
@@ -59,7 +101,9 @@ export default function DashboardPage() {
     }, [session]);
 
     if (status === "loading") return <p>Loading...</p>;
-    if (!session?.user || session.user.role !== "owner") return <p>You must be an owner to view this page.</p>;
+    if (!session?.user || session.user.role !== "owner") {
+        return <p>You must be an owner to view this page.</p>;
+    }
 
     return (
         <div className="p-6">
@@ -72,13 +116,15 @@ export default function DashboardPage() {
                     <p className="text-gray-600">{salon.location}</p>
                 </div>
             ) : (
-                <p className="text-red-500">No salon found. Please create your salon first.</p>
+                <p className="text-red-500">
+                    No salon found. Please create your salon first.
+                </p>
             )}
 
             <div className="mb-8">
                 <h3 className="text-lg font-bold">Services</h3>
                 <ul className="mt-2 space-y-2">
-                    {services.map(s => (
+                    {services.map((s) => (
                         <li key={s._id} className="border p-3 rounded">
                             {s.name} - {s.durationMinutes} min - ${s.price}
                         </li>
@@ -89,7 +135,7 @@ export default function DashboardPage() {
             <div className="mb-8">
                 <h3 className="text-lg font-bold">Stylists</h3>
                 <ul className="mt-2 space-y-2">
-                    {stylists.map(st => (
+                    {stylists.map((st) => (
                         <li key={st._id} className="border p-3 rounded">
                             {st.name}
                         </li>
@@ -100,7 +146,7 @@ export default function DashboardPage() {
             <div className="mb-8">
                 <h3 className="text-lg font-bold">Appointments</h3>
                 <ul className="mt-2 space-y-2">
-                    {appointments.map(appt => (
+                    {appointments.map((appt) => (
                         <li key={appt._id} className="border p-3 rounded">
                             <strong>Date:</strong> {new Date(appt.date).toLocaleDateString()}
                             <br />

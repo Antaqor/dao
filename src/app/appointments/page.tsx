@@ -1,40 +1,75 @@
 "use client";
+
 import React, { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+
+interface AppointmentResponse {
+    message: string;
+}
 
 export default function AppointmentsPage() {
-    const [serviceId, setServiceId] = useState("");
-    const [stylistId, setStylistId] = useState("");
-    const [date, setDate] = useState("");
-    const [startHour, setStartHour] = useState<number | null>(null);
+    const [serviceId, setServiceId] = useState<string>("");
+    const [stylistId, setStylistId] = useState<string>("");
+    const [date, setDate] = useState<string>("");
+    const [startHour, setStartHour] = useState<number | "">("");
     const [message, setMessage] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-    // Environment variable for the backend
-    const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+    // Backend URL from environment variables or default
+    const backendURL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
 
     const handleBookAppointment = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setMessage(null);
 
+        // Validate inputs
+        if (!serviceId || !stylistId || !date || startHour === "") {
+            setMessage("All fields are required.");
+            return;
+        }
+
+        if (startHour < 0 || startHour > 23) {
+            setMessage("Start hour must be between 0 and 23.");
+            return;
+        }
+
+        setIsSubmitting(true);
+
         try {
-            const response = await axios.post(`${backendURL}/api/appointments`, {
-                serviceId,
-                stylistId,
-                date,
-                startHour,
-            }, {
-                // If the route is protected, you might need a token in headers
-                // headers: { Authorization: `Bearer <token>` },
-            });
+            const response = await axios.post<AppointmentResponse>(
+                `${backendURL}/api/appointments`,
+                {
+                    serviceId,
+                    stylistId,
+                    date,
+                    startHour,
+                }
+                // Add headers if authentication is required
+                // , {
+                //     headers: { Authorization: `Bearer <token>` },
+                // }
+            );
 
             if (response.status === 201) {
                 setMessage("Appointment booked successfully!");
+                // Reset form fields
+                setServiceId("");
+                setStylistId("");
+                setDate("");
+                setStartHour("");
             } else {
                 setMessage("Could not book appointment. Please try again.");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                const axiosError = error as AxiosError<{ error: string }>;
+                setMessage(axiosError.response?.data.error || "An unexpected error occurred.");
+            } else {
+                setMessage("An unexpected error occurred.");
+            }
             console.error("Error booking appointment:", error);
-            setMessage(error.response?.data?.error || "An unexpected error occurred.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -43,48 +78,75 @@ export default function AppointmentsPage() {
             <h1 className="text-2xl font-bold mb-4">Book an Appointment</h1>
             <form onSubmit={handleBookAppointment} className="space-y-4 max-w-md">
                 <div>
-                    <label className="block mb-1 font-semibold">Service ID</label>
+                    <label htmlFor="serviceId" className="block mb-1 font-semibold">
+                        Service ID
+                    </label>
                     <input
+                        id="serviceId"
                         type="text"
                         className="w-full border rounded p-2"
                         value={serviceId}
                         onChange={(e) => setServiceId(e.target.value)}
+                        required
                     />
                 </div>
                 <div>
-                    <label className="block mb-1 font-semibold">Stylist ID</label>
+                    <label htmlFor="stylistId" className="block mb-1 font-semibold">
+                        Stylist ID
+                    </label>
                     <input
+                        id="stylistId"
                         type="text"
                         className="w-full border rounded p-2"
                         value={stylistId}
                         onChange={(e) => setStylistId(e.target.value)}
+                        required
                     />
                 </div>
                 <div>
-                    <label className="block mb-1 font-semibold">Date</label>
+                    <label htmlFor="date" className="block mb-1 font-semibold">
+                        Date
+                    </label>
                     <input
+                        id="date"
                         type="date"
                         className="w-full border rounded p-2"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
+                        required
                     />
                 </div>
                 <div>
-                    <label className="block mb-1 font-semibold">Start Hour</label>
+                    <label htmlFor="startHour" className="block mb-1 font-semibold">
+                        Start Hour
+                    </label>
                     <input
+                        id="startHour"
                         type="number"
                         className="w-full border rounded p-2"
                         placeholder="e.g., 9 for 9AM"
-                        value={startHour || ""}
-                        onChange={(e) => setStartHour(parseInt(e.target.value))}
+                        value={startHour}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setStartHour(value === "" ? "" : parseInt(value, 10));
+                        }}
+                        min={0}
+                        max={23}
+                        required
                     />
                 </div>
-                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-                    Book
+                <button
+                    type="submit"
+                    className={`bg-blue-600 text-white px-4 py-2 rounded ${
+                        isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
+                    }`}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? "Booking..." : "Book"}
                 </button>
             </form>
             {message && (
-                <p className="mt-4 text-center font-medium">{message}</p>
+                <p className="mt-4 text-center font-medium text-red-500">{message}</p>
             )}
         </div>
     );

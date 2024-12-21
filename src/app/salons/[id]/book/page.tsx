@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -28,7 +28,6 @@ export default function BookAppointmentPage() {
     const params = useParams() as { id?: string } | null;
     const router = useRouter();
 
-    // Page state
     const [salon, setSalon] = useState<Salon | null>(null);
     const [services, setServices] = useState<Service[]>([]);
     const [stylists, setStylists] = useState<Stylist[]>([]);
@@ -38,57 +37,48 @@ export default function BookAppointmentPage() {
     const [startHour, setStartHour] = useState<number | null>(null);
     const [message, setMessage] = useState("");
 
-    // Time-slot approach for Morning, Afternoon, Evening (to mimic the screenshot style)
     const [timeSlot, setTimeSlot] = useState<"morning" | "afternoon" | "evening" | "">("");
 
-    // On mount, fetch the salon, services, stylists
+    // Fetch salon, services, and stylists
     useEffect(() => {
-        if (!params?.id) return;  // If no ID, abort
-
+        if (!params?.id) return;
         (async () => {
             try {
-                // Get the salon for display
                 const salonRes = await axios.get(`http://localhost:5001/api/salons/${params.id}`);
                 setSalon(salonRes.data);
 
-                // Get services
                 const serviceRes = await axios.get(`http://localhost:5001/api/services/salon/${params.id}`);
                 setServices(serviceRes.data);
 
-                // Get stylists
                 const stylistRes = await axios.get(`http://localhost:5001/api/stylists/salon/${params.id}`);
                 setStylists(stylistRes.data);
-            } catch (err) {
-                console.error("Error fetching data:", err);
+            } catch (error) {
+                console.error("Error fetching data:", error);
             }
         })();
     }, [params]);
 
-    // If NextAuth session is still loading, show a spinner
+    // Show a loading state while NextAuth session is being determined
     if (status === "loading") return <p>Loading...</p>;
 
-    // If user not logged in, prompt them to log in
+    // If user is not logged in, prompt to log in
     if (!session?.user) {
         return <p>Please log in to book an appointment.</p>;
     }
 
-    // Handle booking
+    // Book the appointment
     const handleBook = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage("");
 
-        // If you want to map morning/afternoon/evening to actual hours:
         let chosenHour = startHour;
-        if (timeSlot === "morning") {
-            chosenHour = 9;  // Example: 9 AM
-        } else if (timeSlot === "afternoon") {
-            chosenHour = 13; // Example: 1 PM
-        } else if (timeSlot === "evening") {
-            chosenHour = 17; // Example: 5 PM
-        }
+        if (timeSlot === "morning") chosenHour = 9;  // Example: 9 AM
+        else if (timeSlot === "afternoon") chosenHour = 13; // Example: 1 PM
+        else if (timeSlot === "evening") chosenHour = 17; // Example: 5 PM
 
         if (!serviceId || !stylistId || !date || chosenHour == null) {
-            return setMessage("Please fill all fields.");
+            setMessage("Please fill all fields.");
+            return;
         }
 
         try {
@@ -101,7 +91,10 @@ export default function BookAppointmentPage() {
                     startHour: chosenHour,
                 },
                 {
-                    headers: { Authorization: `Bearer ${session.user.accessToken}` },
+                    headers: {
+                        // Replace with your token shape if you have a specific type
+                        Authorization: `Bearer ${(session.user as { accessToken: string }).accessToken}`,
+                    },
                 }
             );
 
@@ -109,13 +102,17 @@ export default function BookAppointmentPage() {
                 setMessage("Appointment booked successfully!");
                 setTimeout(() => router.push("/"), 2000);
             }
-        } catch (err: any) {
-            console.error("Error booking appointment:", err);
-            setMessage(err.response?.data?.error || "An error occurred.");
+        } catch (error: unknown) {
+            console.error("Error booking appointment:", error);
+            if (error instanceof AxiosError && error.response?.data?.error) {
+                setMessage(error.response.data.error);
+            } else {
+                setMessage("An error occurred.");
+            }
         }
     };
 
-    // A simple function for a "time pill" style button
+    // Simple component for time-slot selection
     const TimePill = ({
                           label,
                           value,
@@ -142,7 +139,6 @@ export default function BookAppointmentPage() {
 
             {message && <p className="mb-4 text-center font-medium text-red-600">{message}</p>}
 
-            {/* Simple "calendar" placeholder */}
             <div className="mb-6">
                 <label className="block font-semibold mb-1">Choose Date:</label>
                 <input
@@ -153,7 +149,6 @@ export default function BookAppointmentPage() {
                 />
             </div>
 
-            {/* Time-slot selection (Morning / Afternoon / Evening) */}
             <div className="mb-6">
                 <p className="font-semibold mb-1">Choose Time Slot:</p>
                 <div className="flex space-x-2">
@@ -196,10 +191,6 @@ export default function BookAppointmentPage() {
                     </select>
                 </div>
 
-                {/*
-            If you also want a manual startHour override, keep it here.
-            Or remove it if you only allow morning/afternoon/evening.
-         */}
                 <div>
                     <label className="block font-semibold">Or Select Specific Start Hour (0-23):</label>
                     <input
