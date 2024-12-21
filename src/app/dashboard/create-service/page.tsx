@@ -45,7 +45,7 @@ export default function CreateServicePage() {
 
         try {
             const response = await axios.post<CreateServiceResponse>(
-                "http://localhost:5001/api/services/my-service",
+                "http://152.42.243.146:5001/api/services/my-service",
                 {
                     name: name.trim(),
                     durationMinutes: duration,

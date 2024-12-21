@@ -28,11 +28,11 @@ export default function SalonDetailPage() {
         (async () => {
             try {
                 // fetch salon
-                const salonRes = await axios.get(`http://localhost:5001/api/salons/${params.id}`);
+                const salonRes = await axios.get(`http://152.42.243.146:5001/api/salons/${params.id}`);
                 setSalon(salonRes.data);
 
                 // fetch services
-                const servicesRes = await axios.get(`http://localhost:5001/api/services/salon/${params.id}`);
+                const servicesRes = await axios.get(`http://152.42.243.146:5001/api/services/salon/${params.id}`);
                 setServices(servicesRes.data);
             } catch (err) {
                 console.error(err);

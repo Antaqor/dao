@@ -44,7 +44,7 @@ export default function CreateTimeBlockPage() {
 
                 // Fetch salon information
                 const salonRes = await axios.get<SalonResponse>(
-                    "http://localhost:5001/api/salons/my-salon",
+                    "http://152.42.243.146:5001/api/salons/my-salon",
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
@@ -53,7 +53,7 @@ export default function CreateTimeBlockPage() {
 
                 // Fetch services associated with the salon
                 const servRes = await axios.get<Service[]>(
-                    `http://localhost:5001/api/services/salon/${salonId}`,
+                    `http://152.42.243.146:5001/api/services/salon/${salonId}`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
@@ -62,7 +62,7 @@ export default function CreateTimeBlockPage() {
 
                 // Fetch stylists associated with the salon
                 const styRes = await axios.get<Stylist[]>(
-                    `http://localhost:5001/api/stylists/salon/${salonId}`,
+                    `http://152.42.243.146:5001/api/stylists/salon/${salonId}`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
@@ -124,7 +124,7 @@ export default function CreateTimeBlockPage() {
         try {
             const token = session.user.accessToken;
             const response = await axios.post<CreateTimeBlockResponse>(
-                "http://localhost:5001/api/services/my-service/time-block",
+                "http://152.42.243.146:5001/api/services/my-service/time-block",
                 {
                     serviceId,
                     stylistId: stylistId || null,

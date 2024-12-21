@@ -44,13 +44,13 @@ export default function BookAppointmentPage() {
         if (!params?.id) return;
         (async () => {
             try {
-                const salonRes = await axios.get(`http://localhost:5001/api/salons/${params.id}`);
+                const salonRes = await axios.get(`http://152.42.243.146:5001/api/salons/${params.id}`);
                 setSalon(salonRes.data);
 
-                const serviceRes = await axios.get(`http://localhost:5001/api/services/salon/${params.id}`);
+                const serviceRes = await axios.get(`http://152.42.243.146:5001/api/services/salon/${params.id}`);
                 setServices(serviceRes.data);
 
-                const stylistRes = await axios.get(`http://localhost:5001/api/stylists/salon/${params.id}`);
+                const stylistRes = await axios.get(`http://152.42.243.146:5001/api/stylists/salon/${params.id}`);
                 setStylists(stylistRes.data);
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -83,7 +83,7 @@ export default function BookAppointmentPage() {
 
         try {
             const res = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://152.42.243.146:5001/api/appointments",
                 {
                     serviceId,
                     stylistId,

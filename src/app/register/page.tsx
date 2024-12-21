@@ -31,7 +31,7 @@ export default function RegisterPage() {
 
         try {
             const response = await axios.post<RegisterResponse>(
-                "http://localhost:5001/api/auth/register",
+                "http://152.42.243.146:5001/api/auth/register",
                 {
                     username,
                     phoneNumber,

@@ -16,7 +16,8 @@ export default function SalonsPage() {
     useEffect(() => {
         (async () => {
             try {
-                const res = await axios.get("http://localhost:5001/api/salons");
+                // Hardcoded IP:
+                const res = await axios.get("http://152.42.243.146:5001/api/salons");
                 setSalons(res.data);
             } catch (err) {
                 console.error(err);
@@ -31,7 +32,7 @@ export default function SalonsPage() {
         <div className="p-4">
             <h1 className="text-2xl font-bold mb-4">All Salons</h1>
             <ul className="space-y-4">
-                {salons.map(salon => (
+                {salons.map((salon) => (
                     <li key={salon._id} className="border p-4 rounded flex justify-between items-center">
                         <div>
                             <h2 className="text-lg font-semibold">{salon.name}</h2>

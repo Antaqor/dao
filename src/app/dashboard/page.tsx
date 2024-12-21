@@ -60,20 +60,20 @@ export default function DashboardPage() {
                     const token = session.user.accessToken;
 
                     // Owner's salon
-                    const salonRes = await axios.get("http://localhost:5001/api/salons/my-salon", {
+                    const salonRes = await axios.get("http://152.42.243.146:5001/api/salons/my-salon", {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     setSalon(salonRes.data);
 
                     // Services
                     const servRes = await axios.get<ServiceData[]>(
-                        `http://localhost:5001/api/services/salon/${salonRes.data._id}`
+                        `http://152.42.243.146:5001/api/services/salon/${salonRes.data._id}`
                     );
                     setServices(servRes.data);
 
                     // Stylists
                     const styRes = await axios.get<StylistData[]>(
-                        `http://localhost:5001/api/stylists/salon/${salonRes.data._id}`
+                        `http://152.42.243.146:5001/api/stylists/salon/${salonRes.data._id}`
                     );
                     setStylists(styRes.data);
 
@@ -81,7 +81,7 @@ export default function DashboardPage() {
                     let allAppointments: AppointmentData[] = [];
                     for (const svc of servRes.data) {
                         const aRes = await axios.get<AppointmentData[]>(
-                            `http://localhost:5001/api/appointments?serviceId=${svc._id}`,
+                            `http://152.42.243.146:5001/api/appointments?serviceId=${svc._id}`,
                             { headers: { Authorization: `Bearer ${token}` } }
                         );
                         allAppointments = allAppointments.concat(aRes.data);

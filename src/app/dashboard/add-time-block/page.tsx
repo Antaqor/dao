@@ -35,7 +35,7 @@ export default function AddTimeBlockPage() {
 
         try {
             const response = await axios.post<AddTimeBlockResponse>(
-                `http://localhost:5001/api/services/${serviceId}/time-blocks`,
+                `http://152.42.243.146:5001/api/services/${serviceId}/time-blocks`,
                 {
                     blockLabel,
                     times

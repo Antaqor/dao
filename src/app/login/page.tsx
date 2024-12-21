@@ -16,7 +16,7 @@ export default function LoginPage() {
         const result = await signIn("credentials", {
             redirect: false,
             username,
-            password,
+            password
         });
 
         if (result?.error) {
@@ -36,18 +36,16 @@ export default function LoginPage() {
                     placeholder="Username"
                     className="border p-2 w-full"
                     value={username}
-                    onChange={e => setUsername(e.target.value)}
+                    onChange={(e) => setUsername(e.target.value)}
                 />
                 <input
                     type="password"
                     placeholder="Password"
                     className="border p-2 w-full"
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                 />
-                <button className="bg-blue-600 text-white px-4 py-2">
-                    Login
-                </button>
+                <button className="bg-blue-600 text-white px-4 py-2">Login</button>
             </form>
         </div>
     );

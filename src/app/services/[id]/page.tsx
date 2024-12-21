@@ -49,7 +49,7 @@ export default function ServiceBookingPage() {
         if (!params.id) return;
         (async () => {
             try {
-                const sRes = await axios.get<ServiceData>(`http://localhost:5001/api/services/${params.id}`);
+                const sRes = await axios.get<ServiceData>(`http://152.42.243.146:5001/api/services/${params.id}`);
                 setService(sRes.data);
             } catch (error: unknown) {
                 if (error instanceof AxiosError) {
@@ -67,7 +67,7 @@ export default function ServiceBookingPage() {
             try {
                 const dateStr = date.toISOString().split("T")[0];
                 const avRes = await axios.get<StylistTimeBlock[]>(
-                    `http://localhost:5001/api/services/${params.id}/availability`,
+                    `http://152.42.243.146:5001/api/services/${params.id}/availability`,
                     { params: { date: dateStr } }
                 );
                 setStylistBlocks(avRes.data);
@@ -132,7 +132,7 @@ export default function ServiceBookingPage() {
         try {
             const dateStr = date.toISOString().split("T")[0];
             const res = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://152.42.243.146:5001/api/appointments",
                 {
                     serviceId: params.id,
                     stylistId: selectedStylistId,
