@@ -1,56 +1,62 @@
-// src/app/components/Header.tsx
-
 "use client";
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { FaSun, FaMoon, FaCloudSun } from 'react-icons/fa';
+import React from "react";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
-const Header: React.FC = () => {
-    const router = useRouter();
+export default function Header() {
     const { data: session } = useSession();
+    const router = useRouter();
 
-    // Determine greeting based on time of day
-    const getGreeting = () => {
-        const currentHour = new Date().getHours();
-        if (currentHour >= 5 && currentHour < 12) {
-            return { text: 'Өглөөний мэнд', icon: <FaSun className="text-yellow-400 text-lg" /> };
-        } else if (currentHour >= 12 && currentHour < 18) {
-            return { text: 'Өдрийн мэнд', icon: <FaCloudSun className="text-orange-400 text-lg" /> };
-        } else {
-            return { text: 'Шөнийн мэнд', icon: <FaMoon className="text-blue-400 text-lg" /> };
-        }
+    const handleLogout = async () => {
+        await signOut({ redirect: false });
+        router.push("/auth/login");
     };
 
-    const greeting = getGreeting();
-
     return (
-        <header className="bg-black text-white shadow-md sticky top-0 z-50">
-            <div className="container mx-auto flex justify-between items-center px-6 py-3">
-                {/* Logo as Text */}
-                <div
-                    className="flex items-center cursor-pointer"
-                    onClick={() => router.push('/')}
+        <header className="bg-black text-white p-4 flex justify-between items-center">
+            <div onClick={() => router.push("/")} className="cursor-pointer font-bold text-xl">
+                My Salon
+            </div>
+            <div className="space-x-3">
+                {/* Public Link to /salons */}
+                <button
+                    onClick={() => router.push("/salons")}
+                    className="bg-blue-700 hover:bg-blue-600 px-3 py-2 rounded"
                 >
-                    <span className="text-2xl font-bold">Vone</span>
-                </div>
+                    Salons
+                </button>
 
-                {/* Greeting and User Profile */}
-                <div className="flex items-center space-x-4">
-                    {/* Greeting with Icon */}
-                    <div className="flex flex-col items-end">
-                        <div className="flex items-center space-x-2">
-                            {greeting.icon}
-                            <span className="text-sm font-semibold">{greeting.text}</span>
-                        </div>
-                        {session?.user?.username && (
-                            <span className="text-xs text-gray-600">{session.user.username}</span>
-                        )}
-                    </div>
-                </div>
+                {/* If user is owner, show Dashboard */}
+                {session?.user?.role === "owner" && (
+                    <button
+                        onClick={() => router.push("/dashboard")}
+                        className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded"
+                    >
+                        Dashboard
+                    </button>
+                )}
+
+                {session?.user ? (
+                    <button onClick={handleLogout} className="bg-red-600 hover:bg-red-500 px-3 py-2 rounded">
+                        Logout
+                    </button>
+                ) : (
+                    <>
+                        <button
+                            onClick={() => router.push("/auth/login")}
+                            className="bg-blue-600 hover:bg-blue-500 px-3 py-2 rounded"
+                        >
+                            Login
+                        </button>
+                        <button
+                            onClick={() => router.push("/auth/register")}
+                            className="bg-green-600 hover:bg-green-500 px-3 py-2 rounded"
+                        >
+                            Register
+                        </button>
+                    </>
+                )}
             </div>
         </header>
     );
-};
-
-export default Header;
+}

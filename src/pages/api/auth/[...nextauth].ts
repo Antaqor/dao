@@ -1,69 +1,63 @@
-import NextAuth, { AuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import axios, { AxiosError } from 'axios';
+// src/pages/api/auth/[...nextauth].ts
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import axios from "axios";
 
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
-            name: 'Credentials',
+            name: "Credentials",
             credentials: {
-                username: { label: 'Username', type: 'text', placeholder: 'Username' },
-                password: { label: 'Password', type: 'password', placeholder: 'Password' },
+                username: { label: "Username", type: "text" },
+                password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
                 try {
-                    const backendUrl = 'http://152.42.243.146:5001'; // Hardcoded backend URL
-
-                    const response = await axios.post(`${backendUrl}/api/auth/login`, {
+                    const res = await axios.post("http://localhost:5001/api/auth/login", {
                         username: credentials?.username,
                         password: credentials?.password,
                     });
-
-                    if (response.status === 200 && response.data.user) {
-                        const user = response.data.user;
-                        return user; // Returning the user object if login is successful
-                    } else {
-                        console.error('Login failed:', response.data?.error || 'Unknown error');
-                        return null;
+                    if (res.status === 200 && res.data.token) {
+                        const user = res.data.user;
+                        user.accessToken = res.data.token;
+                        return user;
                     }
-                } catch (error) {
-                    const axiosError = error as AxiosError<{ error: string }>;
-                    if (axiosError.response?.data?.error) {
-                        console.error('Authorization error:', axiosError.response.data.error);
-                    } else {
-                        console.error('Unexpected error during authorization:', axiosError.message);
-                    }
+                    return null;
+                } catch (err) {
+                    console.error("Login error:", err);
                     return null;
                 }
             },
         }),
     ],
-    secret: 'O29TGmtAuAqOdLWWsZxIZ6nh5lmywlSq06qAKT27UgA=', // Hardcoded NextAuth secret
+    secret: process.env.NEXTAUTH_SECRET || "MYSECRET",
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.email = user.email;
                 token.username = user.username;
-                token.role = user.role || 'user';
+                token.email = user.email;
+                token.role = user.role;
+                token.accessToken = user.accessToken;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string;
-                session.user.email = token.email as string;
                 session.user.username = token.username as string;
+                session.user.email = token.email as string;
                 session.user.role = token.role as string;
+                session.user.accessToken = token.accessToken as string;
             }
             return session;
         },
     },
     pages: {
-        signIn: '/auth/login',
-        error: '/auth/error',
+        signIn: "/auth/login",
+        error: "/auth/login",
     },
-    debug: process.env.NODE_ENV === 'development',
+    debug: true,
 };
 
 export default NextAuth(authOptions);
