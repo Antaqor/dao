@@ -1,81 +1,119 @@
 "use client";
-
 import React from "react";
 
-interface MonthCalendarProps {
-    year: number;
-    month: number; // 0-based (0=Jan, 11=Dec)
-    selectedDate: Date | null;
-    onSelectDate: (date: Date) => void;
-    highlightedDays?: { [day: number]: string };
-    // e.g., { 21: 'fast', 22: 'fast', 29: 'fast' } to show a color or dot
+interface DayStatus {
+    day: number;
+    status: string; // "past" | "fullyBooked" | "goingFast" | "available"
 }
 
-/**
- * A minimal MonthCalendar that displays a single month
- * and allows selecting a date.
- */
-export default function MonthCalendar({
-                                          year,
-                                          month,
-                                          selectedDate,
-                                          onSelectDate,
-                                          highlightedDays = {},
-                                      }: MonthCalendarProps) {
-    // Calculate the first and last day of the month
-    const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth = new Date(year, month + 1, 0);
-    const daysInMonth = lastDayOfMonth.getDate();
+interface MonthData {
+    year: number;
+    month: number; // 0-based (0=Jan, 11=Dec)
+    days: DayStatus[];
+}
 
-    // Determine the starting day of the week (0=Sun, 6=Sat)
-    const startDay = firstDayOfMonth.getDay();
+interface MonthCalendarProps {
+    data: MonthData;
+    selectedDay: number | null;
+    onSelectDay: (day: number) => void;
+}
 
-    // Generate an array of day numbers for the month
-    const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+const MonthCalendar: React.FC<MonthCalendarProps> = ({
+                                                         data,
+                                                         selectedDay,
+                                                         onSelectDay,
+                                                     }) => {
+    const { year, month, days } = data;
 
-    // Get the month's name for display
-    const monthName = firstDayOfMonth.toLocaleString('default', { month: 'long' });
+    const firstOfMonth = new Date(year, month, 1);
+    const dayOfWeekOffset = firstOfMonth.getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    const monthName = firstOfMonth.toLocaleString("default", { month: "long" });
+
+    // Find a day's status
+    const getStatus = (day: number) => {
+        const found = days.find((d) => d.day === day);
+        return found?.status || "available";
+    };
+
+    // Render a single day cell
+    const renderDayCell = (day: number) => {
+        const status = getStatus(day);
+        const isSelected = day === selectedDay;
+
+        let cellClasses = "border h-10 flex items-center justify-center cursor-pointer";
+        let labelClasses = "";
+        let dotColor = "";
+
+        if (status === "past") {
+            cellClasses += " bg-gray-200 text-gray-400 cursor-not-allowed";
+        } else if (status === "fullyBooked") {
+            cellClasses += " bg-gray-100 text-gray-400 line-through";
+            labelClasses = "line-through";
+        } else if (status === "goingFast") {
+            dotColor = "bg-yellow-400 inline-block w-2 h-2 rounded-full ml-1";
+            cellClasses += " hover:bg-blue-50";
+        } else {
+            // "available"
+            cellClasses += " hover:bg-blue-50";
+        }
+
+        if (isSelected && status !== "past" && status !== "fullyBooked") {
+            cellClasses += " bg-blue-600 text-white hover:bg-blue-600";
+        }
+
+        return (
+            <div
+                key={day}
+                className={cellClasses}
+                onClick={() => {
+                    if (status === "past" || status === "fullyBooked") return;
+                    onSelectDay(day);
+                }}
+            >
+                <span className={labelClasses}>{day}</span>
+                {status === "goingFast" && <span className={dotColor} />}
+            </div>
+        );
+    };
+
+    // Build the array of day cells
+    const cells: React.ReactNode[] = [];
+    for (let i = 0; i < dayOfWeekOffset; i++) {
+        cells.push(<div key={`blank-${i}`} className="border h-10" />);
+    }
+    for (let d = 1; d <= totalDays; d++) {
+        cells.push(renderDayCell(d));
+    }
 
     return (
-        <div className="p-4">
-            <p className="text-lg font-bold text-center">{`${monthName} ${year}`}</p>
+        <div className="mb-4">
+            {/* Title row */}
+            <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-bold">
+                    {monthName} {year}
+                </h2>
+                {/* Optional: add previous/next buttons */}
+            </div>
 
-            <div className="grid grid-cols-7 gap-2 mt-2 text-center">
-                {/* Weekday headers */}
-                {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
-                    <div key={day} className="font-semibold">
-                        {day}
-                    </div>
-                ))}
+            {/* Day-of-week headers */}
+            <div className="grid grid-cols-7 text-center mb-1 font-semibold">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+            </div>
 
-                {/* Empty cells for days before the first of the month */}
-                {Array.from({ length: startDay }).map((_, index) => (
-                    <div key={`empty-${index}`} />
-                ))}
-
-                {/* Render each day of the month */}
-                {daysArray.map((day) => {
-                    const currentDate = new Date(year, month, day);
-                    const isSelected =
-                        selectedDate?.toDateString() === currentDate.toDateString();
-                    const highlight = highlightedDays[day];
-
-                    return (
-                        <button
-                            key={day}
-                            onClick={() => onSelectDate(currentDate)}
-                            className={`p-2 border rounded ${
-                                isSelected ? "bg-blue-600 text-white" : "bg-white"
-                            } hover:bg-gray-100`}
-                        >
-                            <span className="block">{day}</span>
-                            {highlight === 'fast' && (
-                                <span className="text-xs text-yellow-500">●</span>
-                            )}
-                        </button>
-                    );
-                })}
+            {/* Calendar grid */}
+            <div className="grid grid-cols-7 text-center">
+                {cells}
             </div>
         </div>
     );
-}
+};
+
+export default MonthCalendar;

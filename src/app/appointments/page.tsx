@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import axios, { AxiosError } from "axios";
 
@@ -15,19 +14,17 @@ export default function AppointmentsPage() {
     const [message, setMessage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-    // Backend URL from environment variables or default
-    const backendURL: string = process.env.NEXT_PUBLIC_BACKEND_URL || "http://152.42.243.146:5001";
+    const backendURL: string =
+        process.env.NEXT_PUBLIC_BACKEND_URL || "http://152.42.243.146:5001";
 
     const handleBookAppointment = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setMessage(null);
 
-        // Validate inputs
         if (!serviceId || !stylistId || !date || startHour === "") {
             setMessage("All fields are required.");
             return;
         }
-
         if (startHour < 0 || startHour > 23) {
             setMessage("Start hour must be between 0 and 23.");
             return;
@@ -44,15 +41,9 @@ export default function AppointmentsPage() {
                     date,
                     startHour,
                 }
-                // Add headers if authentication is required
-                // , {
-                //     headers: { Authorization: `Bearer <token>` },
-                // }
             );
-
             if (response.status === 201) {
                 setMessage("Appointment booked successfully!");
-                // Reset form fields
                 setServiceId("");
                 setStylistId("");
                 setDate("");
@@ -90,6 +81,7 @@ export default function AppointmentsPage() {
                         required
                     />
                 </div>
+
                 <div>
                     <label htmlFor="stylistId" className="block mb-1 font-semibold">
                         Stylist ID
@@ -103,6 +95,7 @@ export default function AppointmentsPage() {
                         required
                     />
                 </div>
+
                 <div>
                     <label htmlFor="date" className="block mb-1 font-semibold">
                         Date
@@ -116,6 +109,7 @@ export default function AppointmentsPage() {
                         required
                     />
                 </div>
+
                 <div>
                     <label htmlFor="startHour" className="block mb-1 font-semibold">
                         Start Hour
@@ -135,6 +129,7 @@ export default function AppointmentsPage() {
                         required
                     />
                 </div>
+
                 <button
                     type="submit"
                     className={`bg-blue-600 text-white px-4 py-2 rounded ${
@@ -145,6 +140,7 @@ export default function AppointmentsPage() {
                     {isSubmitting ? "Booking..." : "Book"}
                 </button>
             </form>
+
             {message && (
                 <p className="mt-4 text-center font-medium text-red-500">{message}</p>
             )}

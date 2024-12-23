@@ -4,7 +4,6 @@ import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-// Define interfaces for typed state
 interface SalonData {
     _id: string;
     name: string;
@@ -45,39 +44,36 @@ export default function DashboardPage() {
     const [appointments, setAppointments] = useState<AppointmentData[]>([]);
     const [error, setError] = useState("");
 
-    // Redirect unauthenticated users
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/auth/login");
         }
     }, [status, router]);
 
-    // Load dashboard data
     useEffect(() => {
         const fetchData = async () => {
             try {
                 if (session?.user?.accessToken && session.user.role === "owner") {
                     const token = session.user.accessToken;
-
-                    // Owner's salon
+                    // Fetch the owner's salon
                     const salonRes = await axios.get("http://152.42.243.146:5001/api/salons/my-salon", {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     setSalon(salonRes.data);
 
-                    // Services
+                    // Fetch services of that salon
                     const servRes = await axios.get<ServiceData[]>(
                         `http://152.42.243.146:5001/api/services/salon/${salonRes.data._id}`
                     );
                     setServices(servRes.data);
 
-                    // Stylists
+                    // Fetch stylists of that salon
                     const styRes = await axios.get<StylistData[]>(
                         `http://152.42.243.146:5001/api/stylists/salon/${salonRes.data._id}`
                     );
                     setStylists(styRes.data);
 
-                    // Appointments for each service
+                    // Fetch appointments for each service
                     let allAppointments: AppointmentData[] = [];
                     for (const svc of servRes.data) {
                         const aRes = await axios.get<AppointmentData[]>(

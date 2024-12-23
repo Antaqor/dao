@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
@@ -16,7 +17,6 @@ export default function SalonsPage() {
     useEffect(() => {
         (async () => {
             try {
-                // Hardcoded IP:
                 const res = await axios.get("http://152.42.243.146:5001/api/salons");
                 setSalons(res.data);
             } catch (err) {
@@ -33,12 +33,18 @@ export default function SalonsPage() {
             <h1 className="text-2xl font-bold mb-4">All Salons</h1>
             <ul className="space-y-4">
                 {salons.map((salon) => (
-                    <li key={salon._id} className="border p-4 rounded flex justify-between items-center">
+                    <li
+                        key={salon._id}
+                        className="border p-4 rounded flex justify-between items-center"
+                    >
                         <div>
                             <h2 className="text-lg font-semibold">{salon.name}</h2>
                             <p className="text-gray-600">{salon.location}</p>
                         </div>
-                        <Link href={`/salons/${salon._id}`} className="bg-black text-white px-4 py-2 rounded">
+                        <Link
+                            href={`/salons/${salon._id}`}
+                            className="bg-black text-white px-4 py-2 rounded"
+                        >
                             View Services
                         </Link>
                     </li>

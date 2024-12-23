@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
@@ -8,7 +9,6 @@ interface Service {
     name: string;
     durationMinutes: number;
     price: number;
-    // other fields if needed
 }
 
 export default function ServicesPage() {
@@ -22,7 +22,7 @@ export default function ServicesPage() {
                 setServices(res.data);
             } catch (err) {
                 console.error(err);
-                setError("Failed to fetch services");
+                setError("Failed to fetch services.");
             }
         })();
     }, []);
@@ -31,16 +31,19 @@ export default function ServicesPage() {
 
     return (
         <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4">Top Services</h1>
-            <ul className="space-y-4">
+            <h1 className="text-2xl font-bold mb-4">All Services</h1>
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {services.map((srv) => (
-                    <li key={srv._id} className="border p-4 rounded">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <h2 className="text-lg font-semibold">{srv.name}</h2>
-                                <p className="text-gray-600">${srv.price} - {srv.durationMinutes} min</p>
-                            </div>
-                            <Link href={`/services/${srv._id}`} className="bg-black text-white px-4 py-2 rounded">
+                    <li key={srv._id} className="border p-4 rounded shadow hover:shadow-md transition-shadow">
+                        <div className="flex flex-col space-y-2">
+                            <h2 className="text-lg font-semibold text-gray-800">{srv.name}</h2>
+                            <p className="text-gray-600">
+                                ${srv.price} - {srv.durationMinutes} min
+                            </p>
+                            <Link
+                                href={`/services/${srv._id}`}
+                                className="mt-auto inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                            >
                                 See Times
                             </Link>
                         </div>

@@ -17,77 +17,106 @@ interface Stylist {
 interface SalonResponse {
     _id: string;
     name: string;
-    location: string;
-}
-
-interface CreateTimeBlockResponse {
-    message: string;
 }
 
 export default function CreateTimeBlockPage() {
     const { data: session } = useSession();
+
     const [services, setServices] = useState<Service[]>([]);
     const [stylists, setStylists] = useState<Stylist[]>([]);
-    const [serviceId, setServiceId] = useState<string>("");
-    const [stylistId, setStylistId] = useState<string>("");
-    const [label, setLabel] = useState<string>("Morning");
-    const [timesStr, setTimesStr] = useState<string>(""); // comma separated
-    const [message, setMessage] = useState<string>("");
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [serviceId, setServiceId] = useState("");
+    const [stylistId, setStylistId] = useState("");
+    const [label, setLabel] = useState("Morning");
+    const [date, setDate] = useState<string>(() => {
+        const now = new Date();
+        return now.toISOString().split("T")[0];
+    });
+    const [startTime, setStartTime] = useState("08:00");
+    const [endTime, setEndTime] = useState("12:00");
+    const [interval, setInterval] = useState(15);
+    const [generatedTimes, setGeneratedTimes] = useState<string[]>([]);
 
+    const [message, setMessage] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Fetch services/stylists when page loads
     useEffect(() => {
-        // Fetch the owner's salon data, including services and stylists
+        if (!session?.user?.accessToken) return;
         const fetchOwnerData = async () => {
-            if (!session?.user?.accessToken) return;
             try {
                 const token = session.user.accessToken;
-
-                // Fetch salon information
+                // Salon
                 const salonRes = await axios.get<SalonResponse>(
                     "http://152.42.243.146:5001/api/salons/my-salon",
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+                    { headers: { Authorization: `Bearer ${token}` } }
                 );
                 const salonId = salonRes.data._id;
 
-                // Fetch services associated with the salon
+                // Services
                 const servRes = await axios.get<Service[]>(
                     `http://152.42.243.146:5001/api/services/salon/${salonId}`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+                    { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setServices(servRes.data);
 
-                // Fetch stylists associated with the salon
+                // Stylists
                 const styRes = await axios.get<Stylist[]>(
                     `http://152.42.243.146:5001/api/stylists/salon/${salonId}`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+                    { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setStylists(styRes.data);
-            } catch (error: unknown) {
-                if (axios.isAxiosError(error)) {
-                    const axiosError = error as AxiosError<{ error: string }>;
-                    setMessage(axiosError.response?.data.error || "Failed to load services/stylists.");
-                } else {
-                    setMessage("An unexpected error occurred.");
-                }
+            } catch (error) {
                 console.error("Error loading owner data:", error);
+                setMessage("Failed to load data.");
             }
         };
         fetchOwnerData();
     }, [session]);
 
-    // Validate the times string format
-    const validateTimes = (times: string[]): boolean => {
-        const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i;
-        return times.every(time => timeRegex.test(time));
+    // Generate time slots from start to end
+    const generateTimes = () => {
+        setGeneratedTimes([]);
+        setMessage("");
+
+        if (!date) {
+            setMessage("Please choose a date.");
+            return;
+        }
+
+        const [startHrStr, startMinStr] = startTime.split(":");
+        const [endHrStr, endMinStr] = endTime.split(":");
+        const startHr = parseInt(startHrStr, 10);
+        const startMin = parseInt(startMinStr, 10);
+        const endHr = parseInt(endHrStr, 10);
+        const endMin = parseInt(endMinStr, 10);
+
+        if (endHr < startHr || (endHr === startHr && endMin <= startMin)) {
+            setMessage("End time must be after start time.");
+            return;
+        }
+
+        let current = new Date(`2022-01-01T${startTime}:00`);
+        const finish = new Date(`2022-01-01T${endTime}:00`);
+        const results: string[] = [];
+
+        const formatTime = (d: Date) => {
+            let hh = d.getHours();
+            const mm = d.getMinutes();
+            const suffix = hh >= 12 ? "PM" : "AM";
+            if (hh === 0) hh = 12;
+            else if (hh > 12) hh -= 12;
+            const mmStr = mm.toString().padStart(2, "0");
+            return `${hh}:${mmStr} ${suffix}`;
+        };
+
+        while (current <= finish) {
+            results.push(formatTime(current));
+            current.setMinutes(current.getMinutes() + interval);
+        }
+        setGeneratedTimes(results);
     };
 
-    // Handle form submission to add a time block
+    // Submit data
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setMessage("");
@@ -96,124 +125,107 @@ export default function CreateTimeBlockPage() {
             setMessage("Please log in as owner.");
             return;
         }
-
         if (!serviceId) {
             setMessage("Please select a service.");
             return;
         }
-
-        if (!label.trim()) {
-            setMessage("Block label is required.");
+        if (!date) {
+            setMessage("Please select a date.");
             return;
         }
-
-        const timesArr = timesStr.split(",").map(t => t.trim()).filter(t => t !== "");
-
-        if (timesArr.length === 0) {
-            setMessage("Please provide at least one valid time.");
-            return;
-        }
-
-        if (!validateTimes(timesArr)) {
-            setMessage("Please enter times in the format HH:MM AM/PM.");
+        if (generatedTimes.length === 0) {
+            setMessage("Please generate times first.");
             return;
         }
 
         setIsSubmitting(true);
-
         try {
             const token = session.user.accessToken;
-            const response = await axios.post<CreateTimeBlockResponse>(
+            const payload = {
+                serviceId,
+                stylistId: stylistId || null,
+                date,              // "2024-12-25" etc.
+                label,             // "Morning"/"Afternoon"/"Evening"/"Custom"
+                times: generatedTimes,
+            };
+
+            const res = await axios.post(
                 "http://152.42.243.146:5001/api/services/my-service/time-block",
-                {
-                    serviceId,
-                    stylistId: stylistId || null,
-                    label: label.trim(),
-                    times: timesArr,
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                payload,
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            if (response.status === 200 || response.status === 201) {
+            if (res.status === 201) {
                 setMessage("Time block added successfully!");
-                // Reset form fields
+                // Reset
                 setServiceId("");
                 setStylistId("");
                 setLabel("Morning");
-                setTimesStr("");
+                const now = new Date();
+                setDate(now.toISOString().split("T")[0]);
+                setStartTime("08:00");
+                setEndTime("12:00");
+                setInterval(15);
+                setGeneratedTimes([]);
             } else {
                 setMessage("Failed to add time block. Please try again.");
             }
-        } catch (error: unknown) {
-            if (axios.isAxiosError(error)) {
-                const axiosError = error as AxiosError<{ error: string }>;
-                setMessage(axiosError.response?.data.error || "Error adding time block.");
-            } else {
-                setMessage("An unexpected error occurred.");
-            }
+        } catch (error) {
             console.error("Error adding time block:", error);
+            setMessage("An unexpected error occurred.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="p-4 max-w-md mx-auto">
-            <h1 className="text-xl font-bold mb-4">Add Time Blocks</h1>
-            {message && <p className="text-red-600 mb-2">{message}</p>}
+        <div className="max-w-xl mx-auto p-4">
+            <h1 className="text-2xl font-bold mb-6">Add Time Blocks</h1>
+            {message && <p className="text-red-600 mb-4">{message}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Service */}
                 <div>
-                    <label htmlFor="serviceSelect" className="block font-semibold">
-                        Select Service
-                    </label>
+                    <label className="block font-semibold mb-1">Select Service</label>
                     <select
-                        id="serviceSelect"
-                        value={serviceId}
-                        onChange={e => setServiceId(e.target.value)}
                         className="border p-2 w-full rounded"
+                        value={serviceId}
+                        onChange={(e) => setServiceId(e.target.value)}
                         required
                     >
                         <option value="">-- choose service --</option>
-                        {services.map(service => (
-                            <option key={service._id} value={service._id}>
-                                {service.name}
+                        {services.map((s) => (
+                            <option key={s._id} value={s._id}>
+                                {s.name}
                             </option>
                         ))}
                     </select>
                 </div>
 
+                {/* Stylist */}
                 <div>
-                    <label htmlFor="stylistSelect" className="block font-semibold">
-                        Select Stylist (optional)
-                    </label>
+                    <label className="block font-semibold mb-1">Select Stylist (optional)</label>
                     <select
-                        id="stylistSelect"
-                        value={stylistId}
-                        onChange={e => setStylistId(e.target.value)}
                         className="border p-2 w-full rounded"
+                        value={stylistId}
+                        onChange={(e) => setStylistId(e.target.value)}
                     >
                         <option value="">No stylist (global)</option>
-                        {stylists.map(stylist => (
-                            <option key={stylist._id} value={stylist._id}>
-                                {stylist.name}
+                        {stylists.map((st) => (
+                            <option key={st._id} value={st._id}>
+                                {st.name}
                             </option>
                         ))}
                     </select>
                 </div>
 
+                {/* Block Label */}
                 <div>
-                    <label htmlFor="blockLabel" className="block font-semibold">
-                        Block Label
-                    </label>
+                    <label className="block font-semibold mb-1">Block Label</label>
                     <select
-                        id="blockLabel"
-                        value={label}
-                        onChange={e => setLabel(e.target.value)}
                         className="border p-2 w-full rounded"
-                        required
+                        value={label}
+                        onChange={(e) => setLabel(e.target.value)}
                     >
                         <option value="Morning">Morning</option>
                         <option value="Afternoon">Afternoon</option>
@@ -222,28 +234,88 @@ export default function CreateTimeBlockPage() {
                     </select>
                 </div>
 
+                {/* Date */}
                 <div>
-                    <label htmlFor="timesStr" className="block font-semibold">
-                        Times (comma separated)
-                    </label>
+                    <label className="block font-semibold mb-1">Choose Date</label>
                     <input
-                        id="timesStr"
-                        type="text"
-                        placeholder="e.g. 09:00 AM,09:15 AM"
-                        value={timesStr}
-                        onChange={e => setTimesStr(e.target.value)}
+                        type="date"
                         className="border p-2 w-full rounded"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
                         required
                     />
                 </div>
 
+                {/* Start/End Time */}
+                <div className="flex space-x-4">
+                    <div className="flex-1">
+                        <label className="block font-semibold mb-1">Start Time</label>
+                        <input
+                            type="time"
+                            className="border p-2 w-full rounded"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block font-semibold mb-1">End Time</label>
+                        <input
+                            type="time"
+                            className="border p-2 w-full rounded"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            required
+                        />
+                    </div>
+                </div>
+
+                {/* Interval */}
+                <div>
+                    <label className="block font-semibold mb-1">Interval (minutes)</label>
+                    <select
+                        className="border p-2 w-full rounded"
+                        value={interval}
+                        onChange={(e) => setInterval(parseInt(e.target.value, 10))}
+                    >
+                        <option value={5}>5 min</option>
+                        <option value={10}>10 min</option>
+                        <option value={15}>15 min</option>
+                        <option value={20}>20 min</option>
+                        <option value={30}>30 min</option>
+                        <option value={60}>60 min</option>
+                    </select>
+                </div>
+
+                {/* Generate Times Button */}
+                <button
+                    type="button"
+                    onClick={generateTimes}
+                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                >
+                    Generate Times
+                </button>
+
+                {/* Display generated times */}
+                {generatedTimes.length > 0 && (
+                    <div className="border bg-gray-50 p-4 rounded">
+                        <p className="font-semibold mb-2">Generated Times:</p>
+                        <div className="flex flex-wrap gap-2">
+                            {generatedTimes.map((t, i) => (
+                                <span key={i} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-sm">
+                  {t}
+                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Submit Button */}
                 <button
                     type="submit"
                     className={`bg-purple-600 text-white px-4 py-2 rounded ${
-                        isSubmitting
-                            ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-purple-700"
-                    } transition-colors`}
+                        isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:bg-purple-700"
+                    }`}
                     disabled={isSubmitting}
                 >
                     {isSubmitting ? "Adding..." : "Add Time Block"}

@@ -5,13 +5,10 @@ import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-// Interface for the successful salon creation response
 interface CreateSalonResponse {
     message: string;
-    // Add other response fields if necessary
 }
 
-// Interface for the error response from the server
 interface ErrorResponse {
     error: string;
 }
@@ -24,9 +21,7 @@ export default function NewSalonPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
-    if (status === "loading") {
-        return <p>Loading...</p>;
-    }
+    if (status === "loading") return <p>Loading...</p>;
 
     if (!session?.user) {
         return (
@@ -36,11 +31,9 @@ export default function NewSalonPage() {
         );
     }
 
-    // Handle form submission to create a new salon
     const handleCreateSalon = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setMessage("");
-
         try {
             const response = await axios.post<CreateSalonResponse>(
                 "http://152.42.243.146:5001/api/salons",
@@ -51,10 +44,8 @@ export default function NewSalonPage() {
                     },
                 }
             );
-
             if (response.status === 201) {
                 setMessage("Salon created successfully!");
-                // Redirect to the salons page after a short delay
                 setTimeout(() => {
                     router.push("/salons");
                 }, 2000);
