@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import axios, { AxiosError } from "axios";
+import axios from "axios"; // Removed AxiosError
 import { useSession } from "next-auth/react";
 
 interface Service {
@@ -95,7 +95,7 @@ export default function CreateTimeBlockPage() {
             return;
         }
 
-        let current = new Date(`2022-01-01T${startTime}:00`);
+        const current = new Date(`2022-01-01T${startTime}:00`); // Changed to const
         const finish = new Date(`2022-01-01T${endTime}:00`);
         const results: string[] = [];
 
@@ -303,8 +303,8 @@ export default function CreateTimeBlockPage() {
                         <div className="flex flex-wrap gap-2">
                             {generatedTimes.map((t, i) => (
                                 <span key={i} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-sm">
-                  {t}
-                </span>
+                                    {t}
+                                </span>
                             ))}
                         </div>
                     </div>
