@@ -4,13 +4,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-import Slider from "../app/components/Slider"; // Adjust the path if necessary
+import Slider from "../app/components/Slider";
 import {
     ScissorsIcon,
     PaintBrushIcon,
     SparklesIcon,
     UserIcon, // Default icon
-} from "@heroicons/react/24/solid"; // Importing solid icons
+} from "@heroicons/react/24/solid";
 
 interface Category {
     _id: string;
@@ -26,7 +26,6 @@ export default function HomePage() {
     useEffect(() => {
         (async () => {
             try {
-                // Fetch categories for homepage
                 const res = await axios.get("http://152.42.243.146:5001/api/categories");
                 setCategories(res.data);
             } catch (err) {
@@ -38,68 +37,78 @@ export default function HomePage() {
         })();
     }, []);
 
-    // Helper function to select icon based on category name
+    // Minimal icon color
     const getCategoryIcon = (name: string) => {
         switch (name.toLowerCase()) {
             case "hair":
-                return <ScissorsIcon className="h-6 w-6 text-blue-600" />;
+                return <ScissorsIcon className="h-6 w-6 text-gray-600" />;
             case "nails":
-                return <PaintBrushIcon className="h-6 w-6 text-blue-600" />;
+                return <PaintBrushIcon className="h-6 w-6 text-gray-600" />;
             case "skin":
-                return <SparklesIcon className="h-6 w-6 text-blue-600" />;
-            // Add more cases as needed
+                return <SparklesIcon className="h-6 w-6 text-gray-600" />;
             default:
-                return <UserIcon className="h-6 w-6 text-blue-600" />; // Default smaller icon
+                return <UserIcon className="h-6 w-6 text-gray-600" />;
         }
     };
 
-    if (loading)
+    if (loading) {
         return (
-            <p className="p-2 text-center text-blue-600 text-sm">Loading categories...</p>
+            <p className="p-3 text-center text-gray-500 text-sm">
+                Loading categories...
+            </p>
         );
-    if (error)
+    }
+    if (error) {
         return (
-            <p className="p-2 text-center text-red-600 text-sm">{error}</p>
+            <p className="p-3 text-center text-red-500 text-sm">
+                {error}
+            </p>
         );
+    }
 
-    // Slider Images Array
+    // Minimal slider images
     const sliderImages = [
         "https://dsifg2gm0y83d.cloudfront.net/bundles/assets/images/posing_model_banner.6ede5ab14cd065f47452.png",
-        // Add more image URLs here as needed
     ];
 
     return (
-        <div className="p-2 sm:p-4">
+        <div className="max-w-4xl mx-auto px-4 py-6">
             {/* Slider Component */}
-            <Slider images={sliderImages} />
+            <div className="mb-6">
+                <Slider images={sliderImages} />
+            </div>
 
-            {/* Spacer */}
-            <div className="my-4 sm:my-6"></div>
-            <p className="mb-4 sm:mb-6 text-center text-gray-700 text-sm sm:text-base">
+            {/* Intro Text */}
+            <p className="mb-6 text-center text-gray-700 text-sm sm:text-base">
                 Select a category below to explore our services and book your appointment.
             </p>
+
+            {/* Categories */}
             {categories.length === 0 ? (
                 <p className="text-center text-gray-500 text-sm sm:text-base">
                     No categories available at the moment.
                 </p>
             ) : (
-                <ul className="grid gap-4 sm:gap-6 grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
+                <ul className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                     {categories.map((cat) => (
                         <li
                             key={cat._id}
-                            className="flex flex-col items-center border rounded-lg p-3 sm:p-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
+                            className="flex flex-col items-center border border-gray-200
+                         rounded p-4 bg-white hover:bg-gray-50
+                         transition-colors"
                         >
-                            {/* Entire Card is Clickable */}
                             <Link
                                 href={`/categories/${cat._id}/services`}
-                                className="flex flex-col items-center w-full h-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="flex flex-col items-center w-full h-full
+                           focus:outline-none focus:ring-2
+                           focus:ring-gray-300"
                                 aria-label={`View services for ${cat.name}`}
                             >
-                                {/* Category Icon */}
+                                {/* Icon */}
                                 {getCategoryIcon(cat.name)}
 
-                                {/* Category Name */}
-                                <h2 className="text-sm sm:text-base font-semibold text-gray-800 mt-2 mb-1 text-center">
+                                {/* Name */}
+                                <h2 className="mt-2 text-sm sm:text-base font-medium text-gray-800">
                                     {cat.name}
                                 </h2>
                             </Link>

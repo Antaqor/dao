@@ -1,21 +1,44 @@
 // app/layout.tsx
 
-"use client";
-import React from "react";
-import { SessionProvider } from "next-auth/react";
 import "./globals.css";
+import { Inter } from "next/font/google";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
+import ClientWrapper from "./components/ClientWrapper";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// Example: using Google’s Inter font
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata = {
+    title: "Salon Booking App",
+    description: "Modern salon booking system",
+};
+
+export default function RootLayout({
+                                       children,
+                                   }: {
+    children: React.ReactNode;
+}) {
     return (
-        <html lang="en">
-        <body className="font-sans bg-white text-black">
-        <SessionProvider>
+        <html lang="en" className={inter.className}>
+        <body className="min-h-screen flex flex-col">
+        {/* Wrap with Next-Auth session provider */}
+        <ClientWrapper>
+            {/* Sticky/Fixed Header */}
             <Header />
-            <main className="mt-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            {/* Main content area */}
+            <main className="flex-1 pt-16 bg-gray-50">
+                {/*
+              The pt-16 offsets the fixed header height.
+              If your Header is 4rem, you can match that with pt-16
+            */}
                 {children}
             </main>
-        </SessionProvider>
+
+            {/* Footer */}
+            <Footer />
+        </ClientWrapper>
         </body>
         </html>
     );

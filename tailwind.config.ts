@@ -10,11 +10,15 @@ module.exports = {
       colors: {
         dark: '#080808', // Custom dark color for the background
         light: '#ffffff', // Light color for text
+        brandPink: '#FF577F'
       },
       fontFamily: {
         sans: ['Inter', 'Helvetica', 'Arial', 'sans-serif'], // Minimalistic and clean font stack
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwind-scrollbar-hide'),
+    // other plugins...
+  ],
 };
