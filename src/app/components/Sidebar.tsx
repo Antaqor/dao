@@ -61,6 +61,12 @@ export default function Sidebar() {
             {/* Bottom Quick Links */}
             <div className="px-6 py-4 border-t border-gray-200 text-sm space-y-2">
                 <Link
+                    href="/dashboard/create-time-block"
+                    className="block text-gray-600 hover:text-gray-900"
+                >
+                    Add Time Blocks
+                </Link>
+                <Link
                     href="/dashboard/create-salon"
                     className="block text-gray-600 hover:text-gray-900"
                 >
@@ -78,12 +84,7 @@ export default function Sidebar() {
                 >
                     Add Stylist
                 </Link>
-                <Link
-                    href="/dashboard/create-time-block"
-                    className="block text-gray-600 hover:text-gray-900"
-                >
-                    Add Time Blocks
-                </Link>
+
             </div>
         </aside>
     );

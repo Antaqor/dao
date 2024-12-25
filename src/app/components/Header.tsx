@@ -1,10 +1,10 @@
-// app/components/Header.tsx
 "use client";
 
 import React from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import LocationDisplay from "./LocationDisplay";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
 
 export default function Header() {
@@ -17,31 +17,34 @@ export default function Header() {
     };
 
     return (
-        // Fixed header with light bottom border for a minimalist look
         <header className="fixed top-0 left-0 w-full z-50 bg-white border-b border-gray-200">
-            <nav className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                {/* Logo / Brand */}
-                <Link href="/" className="flex items-center space-x-2 group">
-                    {/* Simple brand initial in a subtle circle */}
-                    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
-                        <span className="text-gray-700 font-semibold text-sm">S</span>
-                    </div>
-                    <span className="text-gray-800 text-base font-semibold tracking-wide">
-            Salon
-          </span>
-                </Link>
+            {/* Single Row = 64px total */}
+            <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
+                {/* Left side: Brand + Location in one row */}
+                <div className="flex items-center space-x-6">
+                    {/* Brand/Logo */}
+                    <Link href="/" className="flex items-center space-x-2 group">
+                        <div className="h-8 w-8 flex items-center justify-center bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                            <span className="text-gray-700 font-semibold text-sm">B</span>
+                        </div>
+                        <span className="text-gray-800 text-base font-semibold tracking-wide">
+              MyBrand
+            </span>
+                    </Link>
 
-                {/* Desktop Navigation */}
+                    {/* Location display (in the same row) */}
+                    <div className="hidden sm:block text-sm text-gray-600">
+                        <LocationDisplay />
+                    </div>
+                </div>
+
+                {/* Right side: Desktop nav */}
                 <div className="hidden md:flex items-center space-x-6">
                     <HeaderLink href="/salons" label="Salons" />
-                    <HeaderLink href="/categories" label="Categories" />
                     {session?.user?.role === "owner" && (
                         <HeaderLink href="/dashboard" label="Dashboard" />
                     )}
-                </div>
 
-                {/* Right side buttons */}
-                <div className="hidden md:flex items-center space-x-4">
                     {session?.user ? (
                         <>
               <span className="text-sm text-gray-600">
@@ -62,27 +65,24 @@ export default function Header() {
                     )}
                 </div>
 
-                {/* Mobile Menu Toggle */}
+                {/* Mobile menu (hamburger/close) */}
                 <MobileMenu />
             </nav>
         </header>
     );
 }
 
-/** Minimal link style for the header (desktop). */
 function HeaderLink({ href, label }: { href: string; label: string }) {
     return (
         <Link
             href={href}
-            className="text-sm text-gray-600 hover:text-gray-800 hover:underline
-                 transition-colors"
+            className="text-sm text-gray-600 hover:text-gray-800 hover:underline transition-colors"
         >
             {label}
         </Link>
     );
 }
 
-/** A simple mobile menu component. */
 function MobileMenu() {
     const { data: session } = useSession();
     const router = useRouter();
@@ -94,7 +94,7 @@ function MobileMenu() {
     };
 
     return (
-        <div className="md:hidden flex items-center">
+        <div className="md:hidden">
             <button
                 onClick={() => setOpen(!open)}
                 className="text-gray-600 hover:text-gray-800 focus:outline-none"
@@ -103,21 +103,15 @@ function MobileMenu() {
             </button>
 
             {open && (
-                <div className="absolute top-16 left-0 w-full bg-white border-t border-gray-200 shadow-sm p-4">
+                <div className="absolute top-16 right-0 w-48 bg-white border border-gray-200 shadow-md p-4">
                     <div className="flex flex-col space-y-4">
+                        {/* Mobile nav links */}
                         <Link
                             href="/salons"
                             onClick={() => setOpen(false)}
                             className="text-sm text-gray-600 hover:text-gray-800 hover:underline"
                         >
                             Salons
-                        </Link>
-                        <Link
-                            href="/categories"
-                            onClick={() => setOpen(false)}
-                            className="text-sm text-gray-600 hover:text-gray-800 hover:underline"
-                        >
-                            Categories
                         </Link>
                         {session?.user?.role === "owner" && (
                             <Link
@@ -128,6 +122,7 @@ function MobileMenu() {
                                 Dashboard
                             </Link>
                         )}
+
                         {/* Auth actions */}
                         {session?.user ? (
                             <button

@@ -181,8 +181,7 @@ export default function ServiceBookingPage() {
                                     {/* Times */}
                                     <div className="flex flex-wrap gap-2">
                                         {tb.times.map((time, i) => {
-                                            // Here you can check if a time is "booked" or not.
-                                            // For now, let's assume all are free and clickable.
+                                            // For now, assume all times are free/clickable.
                                             return (
                                                 <button
                                                     key={i}
