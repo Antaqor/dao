@@ -49,19 +49,19 @@ export default function BookAppointmentPage() {
             try {
                 // Fetch the salon
                 const salonRes = await axios.get<Salon>(
-                    `http://localhost:5001/api/salons/${params.id}`
+                    `http://152.42.243.146/api/salons/${params.id}`
                 );
                 setSalon(salonRes.data);
 
                 // Fetch services for that salon
                 const serviceRes = await axios.get<Service[]>(
-                    `http://localhost:5001/api/services/salon/${params.id}`
+                    `http://152.42.243.146/api/services/salon/${params.id}`
                 );
                 setServices(serviceRes.data);
 
                 // Fetch stylists for that salon
                 const stylistRes = await axios.get<Stylist[]>(
-                    `http://localhost:5001/api/stylists/salon/${params.id}`
+                    `http://152.42.243.146/api/stylists/salon/${params.id}`
                 );
                 setStylists(stylistRes.data);
             } catch (error) {
@@ -86,7 +86,7 @@ export default function BookAppointmentPage() {
 
         try {
             const res = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://152.42.243.146/api/appointments",
                 {
                     serviceId,
                     stylistId: stylistId || null,

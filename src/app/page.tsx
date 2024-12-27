@@ -42,7 +42,7 @@ export default function HomePage() {
                 setLoading(true);
                 setError("");
 
-                const catRes = await axios.get<Category[]>("http://localhost:5001/api/categories");
+                const catRes = await axios.get<Category[]>("http://152.42.243.146/api/categories");
                 setCategories(catRes.data);
 
                 // Optional: auto-select "Barber" category
@@ -72,7 +72,7 @@ export default function HomePage() {
                 if (searchTerm) params.term = searchTerm;
                 if (selectedCategoryId) params.categoryId = selectedCategoryId;
 
-                const res = await axios.get<Service[]>("http://localhost:5001/api/search", {
+                const res = await axios.get<Service[]>("http://152.42.243.146/api/search", {
                     params,
                 });
                 setServices(res.data);

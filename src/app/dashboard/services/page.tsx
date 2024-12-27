@@ -19,7 +19,7 @@ export default function ServicesPage() {
     useEffect(() => {
         (async () => {
             try {
-                const res = await axios.get("http://localhost:5001/api/services");
+                const res = await axios.get("http://152.42.243.146/api/services");
                 setServices(res.data);
             } catch (err) {
                 console.error("Failed to fetch services:", err);

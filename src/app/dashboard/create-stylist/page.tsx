@@ -33,7 +33,7 @@ export default function CreateStylistPage() {
 
         try {
             const response = await axios.post<CreateStylistResponse>(
-                "http://localhost:5001/api/stylists/my-stylist",
+                "http://152.42.243.146/api/stylists/my-stylist",
                 {
                     name: name.trim(),
                 },

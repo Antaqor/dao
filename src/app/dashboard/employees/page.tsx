@@ -30,13 +30,13 @@ export default function EmployeesPage() {
             try {
                 if (session?.user?.accessToken && session.user.role === "owner") {
                     const token = session.user.accessToken;
-                    const salonRes = await axios.get("http://localhost:5001/api/salons/my-salon", {
+                    const salonRes = await axios.get("http://152.42.243.146/api/salons/my-salon", {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     const salonId = salonRes.data._id;
 
                     const styRes = await axios.get<StylistData[]>(
-                        `http://localhost:5001/api/stylists/salon/${salonId}`,
+                        `http://152.42.243.146/api/stylists/salon/${salonId}`,
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
                     setStylists(styRes.data);

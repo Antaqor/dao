@@ -130,7 +130,7 @@ export default function SelectTimePage() {
         setLoading(true);
 
         axios
-            .get<any[]>(`http://localhost:5001/api/services/${id}/availability`, {
+            .get<any[]>(`http://152.42.243.146/api/services/${id}/availability`, {
                 params: { date: dateStr },
             })
             .then((res) => {

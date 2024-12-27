@@ -30,7 +30,7 @@ export default function ServiceDetailsPage() {
         (async () => {
             try {
                 const res = await axios.get<ServiceData>(
-                    `http://localhost:5001/api/services/${params.id}`
+                    `http://152.42.243.146/api/services/${params.id}`
                 );
                 setService(res.data);
             } catch (err) {

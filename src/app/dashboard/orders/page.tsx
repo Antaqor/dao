@@ -36,7 +36,7 @@ export default function OrdersPage() {
                 if (session?.user?.accessToken && session.user.role === "owner") {
                     const token = session.user.accessToken;
                     const aRes = await axios.get<AppointmentData[]>(
-                        "http://localhost:5001/api/appointments",
+                        "http://152.42.243.146/api/appointments",
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
                     setAppointments(aRes.data);

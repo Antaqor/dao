@@ -52,7 +52,7 @@ export default function PaymentPage() {
 
             // 4) POST to /appointments with Bearer token
             const res = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://152.42.243.146/api/appointments",
                 {
                     serviceId: id,
                     stylistId: stylistId || null,
