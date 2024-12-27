@@ -5,20 +5,53 @@ import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import BookingSteps from "../../../components/BookingSteps";
 
-// OLD shape: interface OldStylistBlock {
-//   stylist?: { _id: string; name: string } | null;
-//   timeBlocks: { date: string; label: string; times: string[] }[];
-// }
-//
-// NEW shape: interface NewStylistBlock {
-//   stylist?: { _id: string; name: string } | null;
-//   times: string[];
-// }
+/**
+ * A single "time block" in the old format.
+ */
+interface RawTimeBlock {
+    date: string;
+    label: string;
+    times: string[];
+}
 
+/**
+ * Old format: stylist + array of timeBlocks
+ */
+interface OldStylistBlock {
+    stylist?: { _id: string; name: string } | null;
+    timeBlocks: RawTimeBlock[];
+}
+
+/**
+ * New format: stylist + times
+ */
+interface NewStylistBlock {
+    stylist?: { _id: string; name: string } | null;
+    times: string[];
+}
+
+/**
+ * A union type that can be either old or new format.
+ */
+type RawStylistBlock = OldStylistBlock | NewStylistBlock;
+
+/**
+ * Our final unified block (always has `times`)
+ */
 interface StylistTimeBlock {
     stylist?: { _id: string; name: string } | null;
-    times?: string[]; // optional because older format might not have it
+    times: string[];
 }
+
+/**
+ * Type guard to distinguish Old vs. New format.
+ * If `timeBlocks` property exists, it must be OldStylistBlock.
+ */
+function isOldStylistBlock(block: RawStylistBlock): block is OldStylistBlock {
+    return "timeBlocks" in block;
+}
+
+// ---
 
 const DateChip: React.FC<{
     dateObj: Date;
@@ -32,15 +65,15 @@ const DateChip: React.FC<{
         <button
             onClick={onClick}
             className={`flex flex-col items-center justify-center w-16 h-16 
-            border border-gray-300 
-            transition-colors duration-200 flex-shrink-0
-            ${
+        border border-gray-300 
+        transition-colors duration-200 flex-shrink-0
+        ${
                 isSelected
                     ? "bg-black text-white border-black"
                     : "bg-white text-black hover:bg-gray-100"
             }
-            rounded-md
-           `}
+        rounded-md
+      `}
         >
             <span className="text-sm font-semibold">{dayNum}</span>
             <span className="text-xs uppercase">{weekday}</span>
@@ -49,7 +82,7 @@ const DateChip: React.FC<{
 };
 
 /**
- * Convert "24:00" style times (e.g. "14:45") to "12-hour" format (e.g. "2:45 PM").
+ * Convert "HH:mm" (24-hour) times (e.g. "14:45") to "12-hour" format (e.g. "2:45 PM").
  */
 function formatTime24To12(time24: string): string {
     const [hourStr, minuteStr] = time24.split(":");
@@ -72,12 +105,12 @@ function groupTimesByTimeOfDay(times: string[] = []) {
     const evening: string[] = [];
 
     // Define hour ranges
-    const morningStart = 7;  // 07:00
-    const morningEnd   = 11; // 11:59
+    const morningStart = 7;   // 07:00
+    const morningEnd   = 11;  // 11:59
     const afternoonStart = 12;
     const afternoonEnd   = 17;
     const eveningStart   = 18;
-    const eveningEnd     = 21; // 21:59 (adjust if needed)
+    const eveningEnd     = 21; // 21:59
 
     times.forEach((t) => {
         const [hourStr] = t.split(":");
@@ -90,11 +123,13 @@ function groupTimesByTimeOfDay(times: string[] = []) {
         } else if (hour >= eveningStart && hour <= eveningEnd) {
             evening.push(t);
         }
-        // If there's data outside these ranges, you could handle it or ignore it
+        // any times outside these ranges, handle or ignore
     });
 
     return { morning, afternoon, evening };
 }
+
+// ---
 
 export default function SelectTimePage() {
     const { id } = useParams() as { id?: string };
@@ -130,20 +165,27 @@ export default function SelectTimePage() {
         setLoading(true);
 
         axios
-            .get<any[]>(`http://152.42.243.146/api/services/${id}/availability`, {
+            .get<RawStylistBlock[]>(`http://152.42.243.146/api/services/${id}/availability`, {
                 params: { date: dateStr },
             })
             .then((res) => {
                 const rawBlocks = res.data;
-                // Unify data to ensure we always have .times
-                const unifiedBlocks = rawBlocks.map((block) => {
-                    if ("timeBlocks" in block && Array.isArray(block.timeBlocks)) {
-                        // old format => flatten them
-                        const allTimes = block.timeBlocks.flatMap((tb: any) => tb.times || []);
-                        return { stylist: block.stylist || null, times: allTimes };
+
+                // Unify old vs. new formats into a single array of times:
+                const unifiedBlocks: StylistTimeBlock[] = rawBlocks.map((block) => {
+                    if (isOldStylistBlock(block)) {
+                        // block is definitely OldStylistBlock
+                        const allTimes = block.timeBlocks.flatMap((tb) => tb.times || []);
+                        return {
+                            stylist: block.stylist || null,
+                            times: allTimes,
+                        };
                     } else {
-                        // new format => just use "times"
-                        return { stylist: block.stylist || null, times: block.times || [] };
+                        // block is definitely NewStylistBlock
+                        return {
+                            stylist: block.stylist || null,
+                            times: block.times || [],
+                        };
                     }
                 });
 
@@ -166,7 +208,7 @@ export default function SelectTimePage() {
         router.push(`/services/${id}/payment?${q.toString()}`);
     };
 
-    // Scroll handlers for the horizontal date scroller
+    // Horizontal scroll handlers
     const scrollLeft = () => {
         document.getElementById("dateScroller")?.scrollBy({ left: -100, behavior: "smooth" });
     };
@@ -259,17 +301,17 @@ export default function SelectTimePage() {
                 <p className="text-gray-600">No availability found for this date.</p>
             ) : (
                 stylistBlocks.map((sb, idx) => {
-                    // 1) Sort times if needed, so they appear in ascending order
-                    const sortedTimes = (sb.times || []).slice().sort();
+                    // 1) Sort times in ascending order
+                    const sortedTimes = sb.times.slice().sort();
 
                     // 2) Group them into morning/afternoon/evening
                     const { morning, afternoon, evening } = groupTimesByTimeOfDay(sortedTimes);
 
-                    // 3) Based on the current tab, decide which times to show
+                    // 3) Decide which times to show based on the current tab
                     let timesToShow: string[] = [];
-                    if (timeOfDay === "morning")   timesToShow = morning;
+                    if (timeOfDay === "morning") timesToShow = morning;
                     if (timeOfDay === "afternoon") timesToShow = afternoon;
-                    if (timeOfDay === "evening")   timesToShow = evening;
+                    if (timeOfDay === "evening") timesToShow = evening;
 
                     return (
                         <div key={idx} className="border p-4 rounded-md bg-white shadow-sm mb-4">
@@ -278,9 +320,7 @@ export default function SelectTimePage() {
                             </h3>
 
                             {timesToShow.length === 0 ? (
-                                <p className="text-gray-500 italic">
-                                    No {timeOfDay} times available.
-                                </p>
+                                <p className="text-gray-500 italic">No {timeOfDay} times available.</p>
                             ) : (
                                 <div className="flex flex-col gap-2">
                                     {timesToShow.map((t) => (
@@ -288,14 +328,14 @@ export default function SelectTimePage() {
                                             key={t}
                                             onClick={() => handleTimeSelect(sb.stylist?._id || null, t)}
                                             className="
-      flex items-center justify-start
-      w-full px-4 py-3
-      border border-gray-300
-      rounded-md
-      hover:bg-gray-100
-      transition-colors duration-150
-      text-left
-    "
+                        flex items-center justify-start
+                        w-full px-4 py-3
+                        border border-gray-300
+                        rounded-md
+                        hover:bg-gray-100
+                        transition-colors duration-150
+                        text-left
+                      "
                                         >
                                             {/* The green dot */}
                                             <span
@@ -305,11 +345,10 @@ export default function SelectTimePage() {
 
                                             {/* The time (24->12 format) */}
                                             <span className="text-blue-600 font-semibold text-lg">
-      {formatTime24To12(t)}
-    </span>
+                        {formatTime24To12(t)}
+                      </span>
                                         </button>
                                     ))}
-
                                 </div>
                             )}
                         </div>

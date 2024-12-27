@@ -25,6 +25,12 @@ interface Service {
     reviewCount?: number;
 }
 
+// Define a type for our query parameters instead of using "any"
+interface SearchParams {
+    term?: string;
+    categoryId?: string;
+}
+
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [services, setServices] = useState<Service[]>([]);
@@ -46,7 +52,9 @@ export default function HomePage() {
                 setCategories(catRes.data);
 
                 // Optional: auto-select "Barber" category
-                const barberCat = catRes.data.find((cat) => cat.name.toLowerCase() === "barber");
+                const barberCat = catRes.data.find(
+                    (cat) => cat.name.toLowerCase() === "barber"
+                );
                 if (barberCat) {
                     setSelectedCategoryId(barberCat._id);
                 }
@@ -68,7 +76,8 @@ export default function HomePage() {
                 setLoading(true);
                 setError("");
 
-                const params: any = {};
+                // Use our typed interface instead of "any"
+                const params: SearchParams = {};
                 if (searchTerm) params.term = searchTerm;
                 if (selectedCategoryId) params.categoryId = selectedCategoryId;
 
@@ -134,13 +143,17 @@ export default function HomePage() {
             {!loading && !error && services.length > 0 && (
                 <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {services.map((svc) => (
-                        <Link href={`/services/${svc._id}`} key={svc._id} className="block border p-4 rounded">
+                        <Link
+                            href={`/services/${svc._id}`}
+                            key={svc._id}
+                            className="block border p-4 rounded"
+                        >
                             <li>
                                 <div className="flex justify-between items-center">
                                     <h3 className="font-bold">{svc.name}</h3>
                                     <span className="text-sm text-gray-600">
-                    ${svc.price} / {svc.durationMinutes} min
-                  </span>
+                                        ${svc.price} / {svc.durationMinutes} min
+                                    </span>
                                 </div>
 
                                 <p className="text-xs text-gray-500 mt-1">
@@ -154,7 +167,9 @@ export default function HomePage() {
                                         ? `${svc.averageRating.toFixed(1)} ★`
                                         : "N/A"}
                                     {svc.reviewCount && svc.reviewCount > 0
-                                        ? ` (${svc.reviewCount} review${svc.reviewCount > 1 ? "s" : ""})`
+                                        ? ` (${svc.reviewCount} review${
+                                            svc.reviewCount > 1 ? "s" : ""
+                                        })`
                                         : ""}
                                 </div>
                             </li>

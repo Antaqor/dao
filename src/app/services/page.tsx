@@ -20,9 +20,15 @@ interface Service {
         name: string;
     };
     category?: string | { _id: string };
-    // <-- New fields from backend aggregator
+    // New fields from backend aggregator
     averageRating?: number;
     reviewCount?: number;
+}
+
+// Define a more specific type for our search parameters
+interface SearchParams {
+    term?: string;
+    categoryId?: string;
 }
 
 export default function HomePage() {
@@ -68,7 +74,8 @@ export default function HomePage() {
                 setLoading(true);
                 setError("");
 
-                const params: any = {};
+                // Use the SearchParams interface instead of any
+                const params: SearchParams = {};
                 if (searchTerm) params.term = searchTerm;
                 if (selectedCategoryId) params.categoryId = selectedCategoryId;
 

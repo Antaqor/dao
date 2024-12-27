@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios, { AxiosError } from "axios";
 
 /** Adjust if your backend returns different fields */
@@ -30,11 +30,29 @@ export default function NearbySalonsPage() {
     // We'll store the "location name" from reverse geocoding
     const [locationName, setLocationName] = useState("");
 
-    useEffect(() => {
-        requestUserLocation();
+    // 3) Reverse geocode lat/lng to get a "display_name" from OpenStreetMap
+    const fetchLocationName = useCallback(async (lat: number, lng: number) => {
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+            const res = await fetch(url);
+            if (!res.ok) {
+                console.error("Reverse geocode error:", res.statusText);
+                return;
+            }
+            const data = await res.json();
+            if (data && data.display_name) {
+                setLocationName(data.display_name);
+            } else {
+                setLocationName("Unknown location");
+            }
+        } catch (err) {
+            console.error("Error reverse geocoding:", err);
+            setLocationName("Unknown location");
+        }
     }, []);
 
-    async function requestUserLocation() {
+    // Main function to request user location & fetch salons
+    const requestUserLocation = useCallback(async () => {
         setLoading(true);
         setError("");
         setDebugLog("");
@@ -91,28 +109,12 @@ export default function NearbySalonsPage() {
                 setLoading(false);
             }
         );
-    }
+    }, [fetchLocationName]);
 
-    // 3) Reverse geocode lat/lng to get a "display_name" from OpenStreetMap
-    async function fetchLocationName(lat: number, lng: number) {
-        try {
-            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
-            const res = await fetch(url);
-            if (!res.ok) {
-                console.error("Reverse geocode error:", res.statusText);
-                return;
-            }
-            const data = await res.json();
-            if (data && data.display_name) {
-                setLocationName(data.display_name);
-            } else {
-                setLocationName("Unknown location");
-            }
-        } catch (err) {
-            console.error("Error reverse geocoding:", err);
-            setLocationName("Unknown location");
-        }
-    }
+    useEffect(() => {
+        // run once on mount
+        requestUserLocation();
+    }, [requestUserLocation]);
 
     return (
         <div className="p-4 max-w-xl mx-auto">
