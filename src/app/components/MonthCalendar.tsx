@@ -1,14 +1,14 @@
+// app/components/MonthCalendar.tsx
 "use client";
 import React from "react";
 
 interface DayStatus {
     day: number;
-    status: string; // "past" | "fullyBooked" | "goingFast" | "available"
+    status: "past" | "fullyBooked" | "goingFast" | "available";
 }
-
 interface MonthData {
     year: number;
-    month: number; // 0-based (0=Jan, 11=Dec)
+    month: number; // 0=Jan, 11=Dec
     days: DayStatus[];
 }
 
@@ -24,38 +24,25 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
                                                          onSelectDay,
                                                      }) => {
     const { year, month, days } = data;
-
     const firstOfMonth = new Date(year, month, 1);
     const dayOfWeekOffset = firstOfMonth.getDay();
     const totalDays = new Date(year, month + 1, 0).getDate();
 
-    const monthName = firstOfMonth.toLocaleString("default", { month: "long" });
+    const getStatus = (dayNum: number) =>
+        days.find((d) => d.day === dayNum)?.status || "available";
 
-    // Find a day's status
-    const getStatus = (day: number) => {
-        const found = days.find((d) => d.day === day);
-        return found?.status || "available";
-    };
+    const renderDayCell = (dayNum: number) => {
+        const status = getStatus(dayNum);
+        const isSelected = dayNum === selectedDay;
 
-    // Render a single day cell
-    const renderDayCell = (day: number) => {
-        const status = getStatus(day);
-        const isSelected = day === selectedDay;
-
-        let cellClasses = "border h-10 flex items-center justify-center cursor-pointer";
-        let labelClasses = "";
-        let dotColor = "";
-
+        let cellClasses =
+            "border h-10 flex items-center justify-center cursor-pointer text-sm";
         if (status === "past") {
-            cellClasses += " bg-gray-200 text-gray-400 cursor-not-allowed";
+            cellClasses += " bg-gray-100 text-gray-400 cursor-not-allowed";
         } else if (status === "fullyBooked") {
-            cellClasses += " bg-gray-100 text-gray-400 line-through";
-            labelClasses = "line-through";
-        } else if (status === "goingFast") {
-            dotColor = "bg-yellow-400 inline-block w-2 h-2 rounded-full ml-1";
-            cellClasses += " hover:bg-blue-50";
+            cellClasses += " bg-gray-100 text-red-400 line-through cursor-not-allowed";
         } else {
-            // "available"
+            // available / goingFast
             cellClasses += " hover:bg-blue-50";
         }
 
@@ -65,20 +52,22 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
 
         return (
             <div
-                key={day}
+                key={dayNum}
                 className={cellClasses}
                 onClick={() => {
                     if (status === "past" || status === "fullyBooked") return;
-                    onSelectDay(day);
+                    onSelectDay(dayNum);
                 }}
             >
-                <span className={labelClasses}>{day}</span>
-                {status === "goingFast" && <span className={dotColor} />}
+                {dayNum}
+                {status === "goingFast" && (
+                    <span className="inline-block w-2 h-2 bg-yellow-400 rounded-full ml-1" />
+                )}
             </div>
         );
     };
 
-    // Build the array of day cells
+    // Build blank cells + day cells
     const cells: React.ReactNode[] = [];
     for (let i = 0; i < dayOfWeekOffset; i++) {
         cells.push(<div key={`blank-${i}`} className="border h-10" />);
@@ -87,18 +76,15 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
         cells.push(renderDayCell(d));
     }
 
-    return (
-        <div className="mb-4">
-            {/* Title row */}
-            <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-bold">
-                    {monthName} {year}
-                </h2>
-                {/* Optional: add previous/next buttons */}
-            </div>
+    const monthName = firstOfMonth.toLocaleString("default", { month: "long" });
 
+    return (
+        <div>
+            <h2 className="font-bold text-lg mb-2">
+                {monthName} {year}
+            </h2>
             {/* Day-of-week headers */}
-            <div className="grid grid-cols-7 text-center mb-1 font-semibold">
+            <div className="grid grid-cols-7 text-xs font-medium text-center mb-1">
                 <div>Sun</div>
                 <div>Mon</div>
                 <div>Tue</div>
@@ -107,11 +93,7 @@ const MonthCalendar: React.FC<MonthCalendarProps> = ({
                 <div>Fri</div>
                 <div>Sat</div>
             </div>
-
-            {/* Calendar grid */}
-            <div className="grid grid-cols-7 text-center">
-                {cells}
-            </div>
+            <div className="grid grid-cols-7 text-center">{cells}</div>
         </div>
     );
 };

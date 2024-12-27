@@ -1,56 +1,167 @@
-//app/services/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
+interface Category {
+    _id: string;
+    name: string;
+    subServices: string[];
+}
+
 interface Service {
     _id: string;
     name: string;
-    durationMinutes: number;
     price: number;
+    durationMinutes: number;
+    salon?: {
+        _id: string;
+        name: string;
+    };
+    category?: string | { _id: string };
+    // <-- New fields from backend aggregator
+    averageRating?: number;
+    reviewCount?: number;
 }
 
-export default function ServicesPage() {
+export default function HomePage() {
+    const [categories, setCategories] = useState<Category[]>([]);
     const [services, setServices] = useState<Service[]>([]);
-    const [error, setError] = useState("");
 
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+
+    // 1) Fetch categories on mount
     useEffect(() => {
-        (async () => {
+        const fetchCategories = async () => {
             try {
-                const res = await axios.get("http://152.42.243.146:5001/api/services");
-                setServices(res.data);
+                setLoading(true);
+                setError("");
+
+                const catRes = await axios.get<Category[]>("http://localhost:5001/api/categories");
+                setCategories(catRes.data);
+
+                // Optional: auto-select "Barber" category
+                const barberCat = catRes.data.find((cat) => cat.name.toLowerCase() === "barber");
+                if (barberCat) {
+                    setSelectedCategoryId(barberCat._id);
+                }
             } catch (err) {
-                console.error(err);
-                setError("Failed to fetch services.");
+                console.error("Error fetching categories:", err);
+                setError("Error loading categories.");
+            } finally {
+                setLoading(false);
             }
-        })();
+        };
+
+        fetchCategories();
     }, []);
 
-    if (error) return <p className="text-red-600">{error}</p>;
+    // 2) Perform search whenever searchTerm or selectedCategoryId changes
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                setLoading(true);
+                setError("");
+
+                const params: any = {};
+                if (searchTerm) params.term = searchTerm;
+                if (selectedCategoryId) params.categoryId = selectedCategoryId;
+
+                const res = await axios.get<Service[]>("http://localhost:5001/api/search", {
+                    params,
+                });
+                setServices(res.data);
+            } catch (err) {
+                console.error("Error searching services:", err);
+                setError("Error searching services.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchServices();
+    }, [searchTerm, selectedCategoryId]);
 
     return (
-        <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4">All Services</h1>
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {services.map((srv) => (
-                    <li key={srv._id} className="border p-4 rounded shadow hover:shadow-md transition-shadow">
-                        <div className="flex flex-col space-y-2">
-                            <h2 className="text-lg font-semibold text-gray-800">{srv.name}</h2>
-                            <p className="text-gray-600">
-                                ${srv.price} - {srv.durationMinutes} min
-                            </p>
-                            <Link
-                                href={`/services/${srv._id}`}
-                                className="mt-auto inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-                            >
-                                See Times
-                            </Link>
-                        </div>
-                    </li>
-                ))}
-            </ul>
+        <div className="max-w-5xl mx-auto px-4 py-6">
+            {/* SEARCH BAR */}
+            <div className="mb-4">
+                <label htmlFor="serviceSearch" className="block mb-1 font-medium">
+                    Search Services
+                </label>
+                <input
+                    id="serviceSearch"
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Try 'haircut' or 'beard'..."
+                    className="border border-gray-300 rounded w-full p-2"
+                />
+            </div>
+
+            {/* CATEGORY BUTTONS */}
+            <div className="flex flex-wrap gap-3 mb-6">
+                {categories.map((cat) => {
+                    const isSelected = selectedCategoryId === cat._id;
+                    return (
+                        <button
+                            key={cat._id}
+                            onClick={() => setSelectedCategoryId(isSelected ? null : cat._id)}
+                            className={`px-4 py-2 border rounded-full ${
+                                isSelected ? "bg-gray-300" : "bg-white hover:bg-gray-100"
+                            }`}
+                        >
+                            {cat.name}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* ERROR / LOADING */}
+            {error && <p className="text-red-600 mb-4">{error}</p>}
+            {loading && <p className="text-gray-500 mb-4">Loading...</p>}
+
+            {/* SEARCH RESULTS */}
+            {!loading && !error && services.length === 0 && (
+                <p className="text-gray-500">No services found.</p>
+            )}
+
+            {!loading && !error && services.length > 0 && (
+                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {services.map((svc) => (
+                        <Link href={`/services/${svc._id}`} key={svc._id} className="block border p-4 rounded">
+                            <li>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-bold">{svc.name}</h3>
+                                    <span className="text-sm text-gray-600">
+                    ${svc.price} / {svc.durationMinutes} min
+                  </span>
+                                </div>
+
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {svc.salon ? svc.salon.name : "No salon"}
+                                </p>
+
+                                {/* Show average rating & review count if available */}
+                                <div className="mt-2 text-xs text-yellow-600">
+                                    Rating:{" "}
+                                    {svc.averageRating && svc.averageRating > 0
+                                        ? `${svc.averageRating.toFixed(1)} ★`
+                                        : "N/A"}
+                                    {svc.reviewCount && svc.reviewCount > 0
+                                        ? ` (${svc.reviewCount} review${svc.reviewCount > 1 ? "s" : ""})`
+                                        : ""}
+                                </div>
+                            </li>
+                        </Link>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 }

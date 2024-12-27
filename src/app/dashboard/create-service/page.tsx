@@ -24,7 +24,7 @@ export default function CreateServicePage() {
     useEffect(() => {
         (async () => {
             try {
-                const catRes = await axios.get("http://152.42.243.146:5001/api/categories");
+                const catRes = await axios.get("http://localhost:5001/api/categories");
                 setCategories(catRes.data);
             } catch (err) {
                 console.error("Failed to fetch categories", err);
@@ -62,7 +62,7 @@ export default function CreateServicePage() {
 
         try {
             const response = await axios.post(
-                "http://152.42.243.146:5001/api/services/my-service",
+                "http://localhost:5001/api/services/my-service",
                 {
                     name: name.trim(),
                     durationMinutes: duration,

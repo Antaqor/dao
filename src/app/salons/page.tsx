@@ -25,7 +25,7 @@ export default function SalonsPage() {
             setError("");
 
             try {
-                const res = await axios.get("http://152.42.243.146:5001/api/salons");
+                const res = await axios.get("http://localhost:5001/api/salons");
                 setSalons(res.data);
                 setFilteredSalons(res.data); // initialize filtered list
             } catch (err) {

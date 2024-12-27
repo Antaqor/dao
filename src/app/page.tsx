@@ -1,15 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import Link from "next/link";
-import {
-    PaintBrushIcon,
-    SparklesIcon,
-    HandRaisedIcon,
-    FaceSmileIcon,
-    StarIcon,           // <-- Import stylish star icon
-} from "@heroicons/react/24/solid";
 
 interface Category {
     _id: string;
@@ -27,170 +20,147 @@ interface Service {
         name: string;
     };
     category?: string | { _id: string };
-}
-
-/** Returns a vibrant icon based on category name. */
-function getVibrantIcon(name: string) {
-    switch (name.toLowerCase()) {
-        case "hair":
-            return <PaintBrushIcon className="h-5 w-5 text-pink-600" />;
-        case "nail":
-        case "nails":
-            return <HandRaisedIcon className="h-5 w-5 text-emerald-600" />;
-        case "beauty":
-        case "skin":
-            return <SparklesIcon className="h-5 w-5 text-purple-600" />;
-        default:
-            return <FaceSmileIcon className="h-5 w-5 text-blue-600" />;
-    }
+    // <-- New fields from backend aggregator
+    averageRating?: number;
+    reviewCount?: number;
 }
 
 export default function HomePage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [services, setServices] = useState<Service[]>([]);
+
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
-    // Fetch categories & services
+    // 1) Fetch categories on mount
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchCategories = async () => {
             try {
-                setError("");
                 setLoading(true);
+                setError("");
 
-                // 1) Fetch categories
-                const catRes = await axios.get<Category[]>("http://152.42.243.146:5001/api/categories");
-                const fetchedCats = catRes.data;
-                setCategories(fetchedCats);
+                const catRes = await axios.get<Category[]>("http://localhost:5001/api/categories");
+                setCategories(catRes.data);
 
-                // 2) Fetch services
-                const srvRes = await axios.get<Service[]>("http://152.42.243.146:5001/api/services");
-                setServices(srvRes.data);
-
-                // 3) Auto-select "Hair" if it exists
-                const defaultHair = fetchedCats.find((cat) => cat.name.toLowerCase() === "hair");
-                if (defaultHair) {
-                    setSelectedCategoryId(defaultHair._id);
+                // Optional: auto-select "Barber" category
+                const barberCat = catRes.data.find((cat) => cat.name.toLowerCase() === "barber");
+                if (barberCat) {
+                    setSelectedCategoryId(barberCat._id);
                 }
             } catch (err) {
-                console.error("Error fetching data:", err);
-                if (err instanceof AxiosError) {
-                    console.error("Axios details:", err.response?.data || err.message);
-                }
-                setError("Failed to load categories or services.");
+                console.error("Error fetching categories:", err);
+                setError("Error loading categories.");
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchData();
+        fetchCategories();
     }, []);
 
-    // Filter displayed services if a category is selected
-    const displayedServices = selectedCategoryId
-        ? services.filter((svc) => {
-            if (typeof svc.category === "string") {
-                return svc.category === selectedCategoryId;
-            } else if (svc.category && typeof svc.category === "object") {
-                return svc.category._id === selectedCategoryId;
-            }
-            return false;
-        })
-        : [];
+    // 2) Perform search whenever searchTerm or selectedCategoryId changes
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                setLoading(true);
+                setError("");
 
-    if (error) {
-        return (
-            <p className="p-4 text-center text-red-600 text-sm sm:text-base">
-                {error}
-            </p>
-        );
-    }
+                const params: any = {};
+                if (searchTerm) params.term = searchTerm;
+                if (selectedCategoryId) params.categoryId = selectedCategoryId;
+
+                const res = await axios.get<Service[]>("http://localhost:5001/api/search", {
+                    params,
+                });
+                setServices(res.data);
+            } catch (err) {
+                console.error("Error searching services:", err);
+                setError("Error searching services.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchServices();
+    }, [searchTerm, selectedCategoryId]);
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-6">
+            {/* SEARCH BAR */}
+            <div className="mb-4">
+                <label htmlFor="serviceSearch" className="block mb-1 font-medium">
+                    Search Services
+                </label>
+                <input
+                    id="serviceSearch"
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Try 'haircut' or 'beard'..."
+                    className="border border-gray-300 rounded w-full p-2"
+                />
+            </div>
+
+            {/* CATEGORY BUTTONS */}
+            <div className="flex flex-wrap gap-3 mb-6">
+                {categories.map((cat) => {
+                    const isSelected = selectedCategoryId === cat._id;
+                    return (
+                        <button
+                            key={cat._id}
+                            onClick={() => setSelectedCategoryId(isSelected ? null : cat._id)}
+                            className={`px-4 py-2 border rounded-full ${
+                                isSelected ? "bg-gray-300" : "bg-white hover:bg-gray-100"
+                            }`}
+                        >
+                            {cat.name}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* ERROR / LOADING */}
+            {error && <p className="text-red-600 mb-4">{error}</p>}
             {loading && <p className="text-gray-500 mb-4">Loading...</p>}
 
-            {/* Categories as "chips" */}
-            {!loading && categories.length > 0 && (
-                <div className="flex flex-wrap gap-3 mb-6">
-                    {categories.map((cat) => {
-                        const isSelected = selectedCategoryId === cat._id;
-                        return (
-                            <button
-                                key={cat._id}
-                                onClick={() => setSelectedCategoryId(isSelected ? null : cat._id)}
-                                className={`group inline-flex items-center space-x-2
-                  border rounded-full px-4 py-2 transition-colors duration-200
-                  focus:outline-none focus:ring-2 focus:ring-gray-300
-                  ${
-                                    isSelected
-                                        ? "bg-gray-200 border-gray-300"
-                                        : "border-gray-300 hover:bg-gray-100"
-                                }
-                `}
-                            >
-                                <span>{getVibrantIcon(cat.name)}</span>
-                                <span className="text-sm sm:text-base text-black group-hover:text-black">
-                  {cat.name}
-                </span>
-                            </button>
-                        );
-                    })}
-                </div>
+            {/* SEARCH RESULTS */}
+            {!loading && !error && services.length === 0 && (
+                <p className="text-gray-500">No services found.</p>
             )}
 
-            {/* Show services if a category is chosen */}
-            {selectedCategoryId && (
-                <div>
-                    <h2 className="text-xl font-bold mb-4">
-                        Services for{" "}
-                        {categories.find((c) => c._id === selectedCategoryId)?.name || "Selected Category"}
-                    </h2>
+            {!loading && !error && services.length > 0 && (
+                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {services.map((svc) => (
+                        <Link href={`/services/${svc._id}`} key={svc._id} className="block border p-4 rounded">
+                            <li>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-bold">{svc.name}</h3>
+                                    <span className="text-sm text-gray-600">
+                    ${svc.price} / {svc.durationMinutes} min
+                  </span>
+                                </div>
 
-                    {displayedServices.length === 0 ? (
-                        <p className="text-gray-500">No services found in this category.</p>
-                    ) : (
-                        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {displayedServices.map((srv) => (
-                                <Link key={srv._id} href={`/services/${srv._id}`} className="block">
-                                    <li className="border p-4 rounded shadow hover:shadow-md transition-shadow cursor-pointer">
-                                        {/* Top row: name (left) + rating (right) */}
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="text-lg font-semibold text-gray-800">{srv.name}</h3>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {svc.salon ? svc.salon.name : "No salon"}
+                                </p>
 
-                                            {/* Rating top-right */}
-                                            <div className="flex flex-col items-end">
-                                                <span className="text-xs text-gray-500 mb-0.5">Үнэлгээ</span>
-                                                <div className="flex text-black space-x-1">
-                                                    <StarIcon className="h-4 w-4" />
-                                                    <StarIcon className="h-4 w-4" />
-                                                    <StarIcon className="h-4 w-4" />
-                                                    <StarIcon className="h-4 w-4" />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Second row: salon (left), price/time (right) */}
-                                        <div className="flex justify-between items-center mt-2">
-                                            {srv.salon ? (
-                                                <p className="text-sm text-gray-600 font-medium">
-                                                    {srv.salon.name}
-                                                </p>
-                                            ) : (
-                                                <p className="text-sm text-gray-400">No salon</p>
-                                            )}
-                                            <p className="text-sm text-gray-600">
-                                                ${srv.price} / {srv.durationMinutes}m
-                                            </p>
-                                        </div>
-                                    </li>
-                                </Link>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                                {/* Show average rating & review count if available */}
+                                <div className="mt-2 text-xs text-yellow-600">
+                                    Rating:{" "}
+                                    {svc.averageRating && svc.averageRating > 0
+                                        ? `${svc.averageRating.toFixed(1)} ★`
+                                        : "N/A"}
+                                    {svc.reviewCount && svc.reviewCount > 0
+                                        ? ` (${svc.reviewCount} review${svc.reviewCount > 1 ? "s" : ""})`
+                                        : ""}
+                                </div>
+                            </li>
+                        </Link>
+                    ))}
+                </ul>
             )}
         </div>
     );

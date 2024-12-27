@@ -1,10 +1,8 @@
 "use client";
-
 import React from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import LocationDisplay from "./LocationDisplay";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
 
 export default function Header() {
@@ -20,7 +18,7 @@ export default function Header() {
         <header className="fixed top-0 left-0 w-full z-50 bg-white border-b border-gray-200">
             {/* Single Row = 64px total */}
             <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
-                {/* Left side: Brand + Location in one row */}
+                {/* Left side: Brand only (removed location) */}
                 <div className="flex items-center space-x-6">
                     {/* Brand/Logo */}
                     <Link href="/" className="flex items-center space-x-2 group">
@@ -31,11 +29,6 @@ export default function Header() {
               MyBrand
             </span>
                     </Link>
-
-                    {/* Location display (in the same row) */}
-                    <div className="hidden sm:block text-sm text-gray-600">
-                        <LocationDisplay />
-                    </div>
                 </div>
 
                 {/* Right side: Desktop nav */}

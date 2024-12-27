@@ -81,7 +81,7 @@ export default function NewSalonPage() {
         try {
             // We call POST /api/salons/my-salon
             const response = await axios.post<CreateSalonResponse>(
-                "http://152.42.243.146:5001/api/salons/my-salon",
+                "http://localhost:5001/api/salons/my-salon",
                 {
                     name,
                     location,

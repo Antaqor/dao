@@ -42,14 +42,14 @@ export default function DashboardPage() {
                     const token = session.user.accessToken;
 
                     // fetch the owner's salon
-                    const salonRes = await axios.get("http://152.42.243.146:5001/api/salons/my-salon", {
+                    const salonRes = await axios.get("http://localhost:5001/api/salons/my-salon", {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     setSalon(salonRes.data);
 
                     // fetch that salon's services
                     const servRes = await axios.get<ServiceData[]>(
-                        `http://152.42.243.146:5001/api/services/salon/${salonRes.data._id}`,
+                        `http://localhost:5001/api/services/salon/${salonRes.data._id}`,
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
                     setServices(servRes.data);
