@@ -80,7 +80,7 @@ export default function HomePage() {
                 setLoading(true);
                 setError("");
 
-                const catRes = await axios.get<Category[]>("http://152.42.243.146/api/categories");
+                const catRes = await axios.get<Category[]>("http://localhost:5001/api/categories");
                 const sorted = catRes.data.sort((a, b) => a.name.localeCompare(b.name));
                 setCategories(sorted);
             } catch (err) {
@@ -104,7 +104,7 @@ export default function HomePage() {
                 if (searchTerm) params.term = searchTerm;
                 if (selectedCategoryId) params.categoryId = selectedCategoryId;
 
-                const res = await axios.get<Service[]>("http://152.42.243.146/api/search", { params });
+                const res = await axios.get<Service[]>("http://localhost:5001/api/search", { params });
                 setServices(res.data);
             } catch (err) {
                 console.error("Error searching services:", err);

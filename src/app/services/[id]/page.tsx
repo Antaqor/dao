@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import MonthCalendar, { MonthData, DayStatus } from "@/app/components/MonthCalendar";
 
-/** Extend the NextAuth session user type to have an optional accessToken. */
 interface SessionUser {
     id?: string;
     name?: string;
@@ -21,7 +20,6 @@ interface ServiceData {
     durationMinutes: number;
 }
 
-/** Convert "HH:mm" => e.g. "2:15 PM" */
 function format24to12(time24: string): string {
     const [h, m] = time24.split(":");
     let hour = parseInt(h, 10);
@@ -36,8 +34,6 @@ export default function ServiceDetailPage() {
     const [service, setService] = useState<ServiceData | null>(null);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
-
-    // Show or hide the booking popup
     const [showBookingPopup, setShowBookingPopup] = useState(false);
 
     useEffect(() => {
@@ -48,9 +44,7 @@ export default function ServiceDetailPage() {
         }
         (async () => {
             try {
-                const res = await axios.get<ServiceData>(
-                    `http://152.42.243.146/api/services/${id}`
-                );
+                const res = await axios.get<ServiceData>(`http://localhost:5001/api/services/${id}`);
                 setService(res.data);
             } catch (err) {
                 console.error("Failed to load service:", err);
@@ -65,46 +59,32 @@ export default function ServiceDetailPage() {
     if (error) return <p className="p-4 text-red-600">{error}</p>;
     if (!service) return <p className="p-4 text-gray-500">Үйлчилгээ олдсонгүй.</p>;
 
-    function handleOpenPopup() {
-        setShowBookingPopup(true);
-    }
-    function handleClosePopup() {
-        setShowBookingPopup(false);
-    }
-
     return (
         <div className="p-4 max-w-lg mx-auto">
             <h1 className="text-2xl font-bold mb-2">{service.name}</h1>
             <p className="text-gray-700 mb-2">
-                Үнэ: <strong>{service.price.toLocaleString()} ₮</strong>
+                Үнэ: <strong>{service.price.toLocaleString()}₮</strong>
             </p>
             <p className="text-gray-700 mb-4">
                 Үргэлжлэх хугацаа: <strong>{service.durationMinutes} мин</strong>
             </p>
-
             <button
-                onClick={handleOpenPopup}
+                onClick={() => setShowBookingPopup(true)}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
                 Захиалга хийх
             </button>
-
             {showBookingPopup && (
-                <OrderPopup
-                    serviceId={service._id}
-                    servicePrice={service.price}
-                    onClose={handleClosePopup}
-                />
+                <OrderPopup serviceId={service._id} servicePrice={service.price} onClose={() => setShowBookingPopup(false)} />
             )}
         </div>
     );
 }
 
-/** Popup for booking */
 function OrderPopup({
                         serviceId,
                         servicePrice,
-                        onClose,
+                        onClose
                     }: {
     serviceId: string;
     servicePrice: number;
@@ -113,28 +93,26 @@ function OrderPopup({
     const { data: session } = useSession();
     const [monthData, setMonthData] = useState<MonthData | null>(null);
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
-
     const [times, setTimes] = useState<string[]>([]);
+    const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState("");
-    const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [bookingDone, setBookingDone] = useState(false);
+    const [invoiceData, setInvoiceData] = useState<any>(null);
+    const [qrDataUrl, setQrDataUrl] = useState("");
 
     useEffect(() => {
-        // Minimal sample data for January 2025
         const januaryDays: DayStatus[] = [
             { day: 6, status: "goingFast" },
-            { day: 10, status: "fullyBooked" },
+            { day: 10, status: "fullyBooked" }
         ];
-        const january2025: MonthData = {
+        setMonthData({
             year: 2025,
             month: 0,
-            days: januaryDays,
-        };
-        setMonthData(january2025);
+            days: januaryDays
+        });
     }, []);
 
-    // Fetch times from server
     useEffect(() => {
         if (!selectedDay) {
             setTimes([]);
@@ -142,17 +120,14 @@ function OrderPopup({
         }
         setLoading(true);
         setMsg("");
-
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
         axios
-            .get<{ times: string[] }[]>(`http://152.42.243.146/api/services/${serviceId}/availability`, {
-                params: { date: dateStr },
+            .get<{ times: string[] }[]>(`http://localhost:5001/api/services/${serviceId}/availability`, {
+                params: { date: dateStr }
             })
             .then((res) => {
-                const data = res.data;
-                const allTimes = data.flatMap((b) => b.times || []);
-                const uniqueTimes = Array.from(new Set(allTimes)).sort();
-                setTimes(uniqueTimes);
+                const allTimes = res.data.flatMap((b) => b.times || []);
+                setTimes([...new Set(allTimes)].sort());
             })
             .catch((err) => {
                 console.error("Error fetching times:", err);
@@ -163,71 +138,108 @@ function OrderPopup({
 
     async function handleBookTime() {
         if (!session?.user) {
-            setMsg("Та эхлээд нэвтэрч орно уу.");
+            setMsg("Нэвтрэх шаардлагатай!");
             return;
         }
         if (!selectedDay || !selectedTime) {
             setMsg("Өдөр болон цаг сонгоно уу.");
             return;
         }
+        const user = session.user as SessionUser;
+        if (!user.accessToken) {
+            setMsg("Token алга байна. Дахин нэвтэрнэ үү.");
+            return;
+        }
+        setLoading(true);
         try {
-            const token = (session.user as SessionUser)?.accessToken;
-            if (!token) {
-                setMsg("Token олдсонгүй. Дахин нэвтэрнэ үү.");
-                return;
-            }
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
-            const res = await axios.post(
-                "http://152.42.243.146/api/appointments",
+            const bookRes = await axios.post(
+                "http://localhost:5001/api/appointments",
                 {
                     serviceId,
                     date: dateStr,
                     startTime: selectedTime,
-                    status: "paid",
+                    status: "pendingPayment"
                 },
                 {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: { Authorization: `Bearer ${user.accessToken}` }
                 }
             );
-            if (res.status === 201) {
-                setBookingDone(true);
-                setMsg("Захиалга амжилттай боллоо!");
+            if (bookRes.status === 201) {
+                const invoiceRes = await axios.post("http://localhost:5001/api/payments/create-invoice", {
+                    invoiceCode: "FORU_INVOICE",
+                    amount: servicePrice
+                });
+                if (invoiceRes.data.success) {
+                    setInvoiceData(invoiceRes.data.invoiceData);
+                    setQrDataUrl(invoiceRes.data.qrDataUrl || "");
+                    setMsg("Төлбөрийн нэхэмжлэл үүссэн. QR эсвэл Social Pay-р төлнө үү.");
+                } else {
+                    setMsg("QPay Invoice үүсгэхэд алдаа гарлаа.");
+                }
             } else {
                 setMsg("Захиалга үүсгэхэд алдаа гарлаа.");
             }
         } catch (err) {
             console.error("Booking error:", err);
-            setMsg("Серверийн алдаа эсвэл та нэвтрэх шаардлагатай.");
+            if (axios.isAxiosError(err) && err.response?.status === 401) {
+                setMsg("Token буруу, эсвэл хүчинтэй хугацаа дууссан. Нэвтэрнэ үү.");
+            } else {
+                setMsg("Серверийн алдаа эсвэл нэвтрэлт шаардлагатай.");
+            }
+        } finally {
+            setLoading(false);
         }
     }
 
-    function handleClose() {
-        onClose();
+    async function handleCheckInvoice() {
+        if (!invoiceData?.invoice_id) {
+            setMsg("Invoice ID олдсонгүй.");
+            return;
+        }
+        setLoading(true);
+        try {
+            const checkRes = await axios.post("http://localhost:5001/api/payments/check-invoice", {
+                invoiceId: invoiceData.invoice_id
+            });
+            if (
+                checkRes.data.success &&
+                checkRes.data.checkResult?.payments?.[0]?.payment_status === "PAID"
+            ) {
+                setBookingDone(true);
+                setMsg("Төлбөр амжилттай хийгдлээ!");
+            } else {
+                setMsg("Төлбөр хараахан хийгдээгүй байна.");
+            }
+        } catch (err) {
+            console.error("Check invoice error:", err);
+            setMsg("Төлбөр шалгахад алдаа гарлаа.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded w-full max-w-md relative">
-                <button onClick={handleClose} className="absolute top-2 right-2 text-gray-600">
+                <button onClick={onClose} className="absolute top-2 right-2 text-gray-600">
                     ✕
                 </button>
                 {!bookingDone ? (
                     <>
                         <h2 className="text-xl font-bold mb-4">Цаг Захиалга</h2>
                         <p className="text-sm text-gray-700 mb-3">
-                            <strong>Төлбөр:</strong> {servicePrice.toLocaleString()} ₮
+                            <strong>Төлбөр:</strong> {servicePrice.toLocaleString()}₮
                         </p>
-
                         {monthData && (
                             <MonthCalendar
                                 monthData={monthData}
                                 selectedDay={selectedDay}
-                                onSelectDay={setSelectedDay}
+                                onSelectDay={(day) => setSelectedDay(day)}
                             />
                         )}
                         {loading && <p className="mt-4 text-sm">Ачаалж байна...</p>}
                         {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
-
                         {times.length > 0 && !loading && (
                             <div className="mt-4">
                                 <h3 className="text-sm font-semibold mb-2">Цаг сонгох:</h3>
@@ -248,7 +260,7 @@ function OrderPopup({
                         )}
                         <div className="mt-6 flex items-center justify-between">
                             <button
-                                onClick={handleClose}
+                                onClick={onClose}
                                 className="px-4 py-2 text-sm rounded border border-gray-300 hover:bg-gray-100"
                             >
                                 Болих
@@ -257,20 +269,36 @@ function OrderPopup({
                                 onClick={handleBookTime}
                                 className="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
                             >
-                                Төлбөр (Жишээ) &amp; Захиалах
+                                Цаг + Төлбөр үүсгэх
                             </button>
                         </div>
+                        {invoiceData && (
+                            <div className="mt-6">
+                <pre className="bg-gray-100 p-2 text-xs">
+                  {JSON.stringify(invoiceData, null, 2)}
+                </pre>
+                                {qrDataUrl && (
+                                    <img
+                                        src={qrDataUrl}
+                                        alt="QR Code"
+                                        style={{ width: 200, height: 200, marginTop: 8 }}
+                                    />
+                                )}
+                                <button
+                                    onClick={handleCheckInvoice}
+                                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                >
+                                    Төлбөр шалгах
+                                </button>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="text-center">
-                        <h2 className="text-xl font-bold text-green-600 mb-4">
-                            Амжилттай Захиалга!
-                        </h2>
-                        <p className="text-sm text-gray-700 mb-4">
-                            Баярлалаа. Таны цагийг амжилттай бүртгэлээ.
-                        </p>
+                        <h2 className="text-xl font-bold text-green-600 mb-4">Амжилттай Захиалга!</h2>
+                        <p className="text-sm text-gray-700 mb-4">Таны цаг болон төлбөр баталгаажлаа!</p>
                         <button
-                            onClick={handleClose}
+                            onClick={onClose}
                             className="px-4 py-2 text-sm rounded bg-gray-300 hover:bg-gray-400"
                         >
                             Хаах
