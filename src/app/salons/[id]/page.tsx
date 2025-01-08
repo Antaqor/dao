@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import {
@@ -52,7 +52,12 @@ function format24to12(time24: string) {
     return `${hour}:${String(minute).padStart(2, "0")} ${ampm}`;
 }
 
-function BookingPopup({ service, onClose }: { service: Service; onClose: () => void }) {
+interface BookingPopupProps {
+    service: Service;
+    onClose: () => void;
+}
+
+function BookingPopup({ service, onClose }: BookingPopupProps) {
     const { data: session } = useSession();
     const [monthData, setMonthData] = useState<MonthData | null>(null);
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -84,7 +89,7 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
         setMessage("");
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
         axios
-            .get<{ times: string[] }[]>(`http://localhost:5001/api/services/${service._id}/availability`, {
+            .get<{ times: string[] }[]>(`http://152.42.243.146/api/services/${service._id}/availability`, {
                 params: { date: dateStr },
             })
             .then((res) => {
@@ -114,7 +119,7 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
         try {
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
             const apptRes = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://152.42.243.146/api/appointments",
                 {
                     serviceId: service._id,
                     date: dateStr,
@@ -125,13 +130,17 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
             );
             if (apptRes.status === 201) {
                 setMessage("Цаг амжилттай захиалагдлаа! Төлбөрийн нэхэмжлэл үүсгэж байна...");
-                const invoiceRes = await axios.post("http://localhost:5001/api/payments/create-invoice", {
+                const invoiceRes = await axios.post<{
+                    success?: boolean;
+                    invoiceData?: { invoice_id?: string };
+                    qrDataUrl?: string;
+                }>("http://152.42.243.146/api/payments/create-invoice", {
                     invoiceCode: "FORU_INVOICE",
                     amount: service.price,
                 });
                 if (invoiceRes.data?.success) {
                     const inv = invoiceRes.data.invoiceData;
-                    setInvoiceId(inv.invoice_id || "");
+                    setInvoiceId(inv?.invoice_id || "");
                     setQrUrl(invoiceRes.data.qrDataUrl || "");
                     setMessage("Төлбөрийн нэхэмжлэл үүссэн. QR-ээр эсвэл Social Pay-р төлнө үү.");
                 } else {
@@ -141,7 +150,7 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
             } else {
                 setMessage("Захиалга үүсгэхэд алдаа гарлаа.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (axios.isAxiosError(err) && err.response?.status === 401) {
                 setMessage("Token буруу буюу хугацаа дууссан. Дахин нэвтэрнэ үү.");
             } else {
@@ -158,10 +167,15 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
         setMessage("");
         setCheckingPayment(true);
         try {
-            const checkRes = await axios.post("http://localhost:5001/api/payments/check-invoice", {
+            const checkRes = await axios.post<{
+                checkResult?: {
+                    rows?: Array<{
+                        payment_status?: string;
+                    }>;
+                };
+            }>("http://152.42.243.146/api/payments/check-invoice", {
                 invoiceId,
             });
-            // If the API returns something like { rows: [ { payment_status: 'PAID' } ] }:
             const payRow = checkRes.data.checkResult?.rows?.[0];
             const payStatus = payRow?.payment_status || "UNPAID";
             if (payStatus === "PAID") {
@@ -178,7 +192,11 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+        <div
+            className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+        >
             <div className="bg-white w-full max-w-md rounded-lg relative p-6 shadow-2xl">
                 <button
                     onClick={onClose}
@@ -193,8 +211,8 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
                         <h2 className="text-2xl font-bold text-neutral-900 mb-4">
                             {service.name}
                             <span className="ml-2 text-base text-primary font-medium">
-                {service.price.toLocaleString()}₮
-              </span>
+                                {service.price.toLocaleString()}₮
+                            </span>
                         </h2>
                         {monthData && (
                             <MonthCalendar
@@ -203,8 +221,12 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
                                 onSelectDay={setSelectedDay}
                             />
                         )}
-                        {loadingTimes && <p className="mt-3 text-sm text-gray-500">Цаг ачаалж байна...</p>}
-                        {message && <p className="mt-3 text-sm text-red-600 font-medium">{message}</p>}
+                        {loadingTimes && (
+                            <p className="mt-3 text-sm text-gray-500">Цаг ачаалж байна...</p>
+                        )}
+                        {message && (
+                            <p className="mt-3 text-sm text-red-600 font-medium">{message}</p>
+                        )}
                         {times.length > 0 && !loadingTimes && (
                             <div className="mt-4 grid grid-cols-3 gap-3">
                                 {times.map((t) => (
@@ -242,9 +264,13 @@ function BookingPopup({ service, onClose }: { service: Service; onClose: () => v
                         {paymentDone ? (
                             <h2 className="text-xl font-bold text-green-600 mb-3">Төлбөр амжилттай!</h2>
                         ) : (
-                            <h2 className="text-xl font-bold text-green-600 mb-3">Цаг амжилттай захиалагдлаа!</h2>
+                            <h2 className="text-xl font-bold text-green-600 mb-3">
+                                Цаг амжилттай захиалагдлаа!
+                            </h2>
                         )}
-                        {message && <p className="text-sm text-gray-700 mb-4">{message}</p>}
+                        {message && (
+                            <p className="text-sm text-gray-700 mb-4">{message}</p>
+                        )}
                         {qrUrl && !paymentDone && (
                             <img
                                 src={qrUrl}
@@ -291,12 +317,12 @@ export default function SalonDetailPage() {
         (async () => {
             try {
                 const salonRes = await axios.get<Salon>(
-                    `http://localhost:5001/api/salons/${params.id}`
+                    `http://152.42.243.146/api/salons/${params.id}`
                 );
                 setSalon(salonRes.data);
 
                 const servicesRes = await axios.get<Service[]>(
-                    `http://localhost:5001/api/services/salon/${params.id}`
+                    `http://152.42.243.146/api/services/salon/${params.id}`
                 );
                 setServices(servicesRes.data);
             } catch (err) {

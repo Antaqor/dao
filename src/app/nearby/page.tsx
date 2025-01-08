@@ -76,7 +76,7 @@ export default function NearbySalonsPage() {
 
                 // 2) Fetch nearby salons
                 try {
-                    const res = await axios.get<Salon[]>("http://localhost:5001/api/salons/nearby", {
+                    const res = await axios.get<Salon[]>("http://152.42.243.146/api/salons/nearby", {
                         params: { lat, lng },
                     });
                     setSalons(res.data);

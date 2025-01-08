@@ -20,6 +20,29 @@ interface ServiceData {
     durationMinutes: number;
 }
 
+interface InvoiceData {
+    invoice_id?: string;
+    [key: string]: unknown; // if you expect extra fields from qPay response
+}
+
+interface CreateInvoiceResponse {
+    success?: boolean;
+    invoiceData?: InvoiceData;
+    qrDataUrl?: string;
+}
+
+interface CheckInvoiceResponse {
+    success?: boolean;
+    checkResult?: {
+        payments?: Array<{
+            payment_status?: string;
+            [key: string]: unknown;
+        }>;
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
+}
+
 function format24to12(time24: string): string {
     const [h, m] = time24.split(":");
     let hour = parseInt(h, 10);
@@ -44,7 +67,9 @@ export default function ServiceDetailPage() {
         }
         (async () => {
             try {
-                const res = await axios.get<ServiceData>(`http://localhost:5001/api/services/${id}`);
+                const res = await axios.get<ServiceData>(
+                    `http://152.42.243.146/api/services/${id}`
+                );
                 setService(res.data);
             } catch (err) {
                 console.error("Failed to load service:", err);
@@ -75,21 +100,23 @@ export default function ServiceDetailPage() {
                 Захиалга хийх
             </button>
             {showBookingPopup && (
-                <OrderPopup serviceId={service._id} servicePrice={service.price} onClose={() => setShowBookingPopup(false)} />
+                <OrderPopup
+                    serviceId={service._id}
+                    servicePrice={service.price}
+                    onClose={() => setShowBookingPopup(false)}
+                />
             )}
         </div>
     );
 }
 
-function OrderPopup({
-                        serviceId,
-                        servicePrice,
-                        onClose
-                    }: {
+interface OrderPopupProps {
     serviceId: string;
     servicePrice: number;
     onClose: () => void;
-}) {
+}
+
+function OrderPopup({ serviceId, servicePrice, onClose }: OrderPopupProps) {
     const { data: session } = useSession();
     const [monthData, setMonthData] = useState<MonthData | null>(null);
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -98,18 +125,19 @@ function OrderPopup({
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState("");
     const [bookingDone, setBookingDone] = useState(false);
-    const [invoiceData, setInvoiceData] = useState<any>(null);
+
+    const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
     const [qrDataUrl, setQrDataUrl] = useState("");
 
     useEffect(() => {
         const januaryDays: DayStatus[] = [
             { day: 6, status: "goingFast" },
-            { day: 10, status: "fullyBooked" }
+            { day: 10, status: "fullyBooked" },
         ];
         setMonthData({
             year: 2025,
             month: 0,
-            days: januaryDays
+            days: januaryDays,
         });
     }, []);
 
@@ -122,14 +150,17 @@ function OrderPopup({
         setMsg("");
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
         axios
-            .get<{ times: string[] }[]>(`http://localhost:5001/api/services/${serviceId}/availability`, {
-                params: { date: dateStr }
-            })
+            .get<{ times: string[] }[]>(
+                `http://152.42.243.146/api/services/${serviceId}/availability`,
+                {
+                    params: { date: dateStr },
+                }
+            )
             .then((res) => {
                 const allTimes = res.data.flatMap((b) => b.times || []);
                 setTimes([...new Set(allTimes)].sort());
             })
-            .catch((err) => {
+            .catch((err: unknown) => {
                 console.error("Error fetching times:", err);
                 setMsg("Цагийн мэдээлэл ачаалж чадсангүй.");
             })
@@ -154,23 +185,26 @@ function OrderPopup({
         try {
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
             const bookRes = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://152.42.243.146/api/appointments",
                 {
                     serviceId,
                     date: dateStr,
                     startTime: selectedTime,
-                    status: "pendingPayment"
+                    status: "pendingPayment",
                 },
                 {
-                    headers: { Authorization: `Bearer ${user.accessToken}` }
+                    headers: { Authorization: `Bearer ${user.accessToken}` },
                 }
             );
             if (bookRes.status === 201) {
-                const invoiceRes = await axios.post("http://localhost:5001/api/payments/create-invoice", {
-                    invoiceCode: "FORU_INVOICE",
-                    amount: servicePrice
-                });
-                if (invoiceRes.data.success) {
+                const invoiceRes = await axios.post<CreateInvoiceResponse>(
+                    "http://152.42.243.146/api/payments/create-invoice",
+                    {
+                        invoiceCode: "FORU_INVOICE",
+                        amount: servicePrice,
+                    }
+                );
+                if (invoiceRes.data.success && invoiceRes.data.invoiceData) {
                     setInvoiceData(invoiceRes.data.invoiceData);
                     setQrDataUrl(invoiceRes.data.qrDataUrl || "");
                     setMsg("Төлбөрийн нэхэмжлэл үүссэн. QR эсвэл Social Pay-р төлнө үү.");
@@ -180,7 +214,7 @@ function OrderPopup({
             } else {
                 setMsg("Захиалга үүсгэхэд алдаа гарлаа.");
             }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Booking error:", err);
             if (axios.isAxiosError(err) && err.response?.status === 401) {
                 setMsg("Token буруу, эсвэл хүчинтэй хугацаа дууссан. Нэвтэрнэ үү.");
@@ -199,20 +233,22 @@ function OrderPopup({
         }
         setLoading(true);
         try {
-            const checkRes = await axios.post("http://localhost:5001/api/payments/check-invoice", {
-                invoiceId: invoiceData.invoice_id
-            });
-            if (
-                checkRes.data.success &&
-                checkRes.data.checkResult?.payments?.[0]?.payment_status === "PAID"
-            ) {
+            const checkRes = await axios.post<CheckInvoiceResponse>(
+                "http://152.42.243.146/api/payments/check-invoice",
+                {
+                    invoiceId: invoiceData.invoice_id,
+                }
+            );
+            const paymentArr = checkRes.data.checkResult?.payments || [];
+            const paymentStatus = paymentArr[0]?.payment_status || "UNPAID";
+            if (checkRes.data.success && paymentStatus === "PAID") {
                 setBookingDone(true);
                 setMsg("Төлбөр амжилттай хийгдлээ!");
             } else {
                 setMsg("Төлбөр хараахан хийгдээгүй байна.");
             }
-        } catch (err) {
-            console.error("Check invoice error:", err);
+        } catch (error: unknown) {
+            console.error("Check invoice error:", error);
             setMsg("Төлбөр шалгахад алдаа гарлаа.");
         } finally {
             setLoading(false);
@@ -240,6 +276,7 @@ function OrderPopup({
                         )}
                         {loading && <p className="mt-4 text-sm">Ачаалж байна...</p>}
                         {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
+
                         {times.length > 0 && !loading && (
                             <div className="mt-4">
                                 <h3 className="text-sm font-semibold mb-2">Цаг сонгох:</h3>
@@ -258,6 +295,7 @@ function OrderPopup({
                                 </div>
                             </div>
                         )}
+
                         <div className="mt-6 flex items-center justify-between">
                             <button
                                 onClick={onClose}
@@ -272,6 +310,7 @@ function OrderPopup({
                                 Цаг + Төлбөр үүсгэх
                             </button>
                         </div>
+
                         {invoiceData && (
                             <div className="mt-6">
                 <pre className="bg-gray-100 p-2 text-xs">
