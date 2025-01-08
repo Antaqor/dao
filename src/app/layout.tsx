@@ -1,8 +1,9 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
 import ClientWrapper from "./components/ClientWrapper";
+import SidebarRight from "../../src/app/components/SidebarRight";
+import SidebarLeft from "../../src/app/components/SidebarLeft";
+import Header from "./components/Header";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,20 +12,28 @@ export const metadata = {
     description: "Modern salon booking system",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+                                       children,
+                                   }: {
+    children: React.ReactNode;
+}) {
     return (
         <html lang="en" className={inter.className}>
-        <body className="min-h-screen flex flex-col">
+        <body className="min-h-screen bg-gray-50">
         <ClientWrapper>
-            {/* Fixed Header */}
+            {/* Fixed header at the top */}
             <Header />
 
-            {/* Make sure to offset the header height (64px) */}
-            <main className="flex-1 pt-16 bg-gray-50">
+            {/* Fixed left sidebar */}
+            <SidebarLeft />
+
+            {/* Fixed right sidebar */}
+            <SidebarRight />
+
+            {/* Main content in the center, spaced around fixed header & sidebars */}
+            <main className="pt-16 ml-64 mr-64 min-h-screen">
                 {children}
             </main>
-
-            <Footer />
         </ClientWrapper>
         </body>
         </html>

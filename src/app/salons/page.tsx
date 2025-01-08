@@ -4,11 +4,19 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
-/** Basic shape of a Salon. Adjust if your backend differs. */
+/**
+ * Extended shape of a Salon:
+ * - 'logo' for the 50×50 logo
+ * - 'coverImage' for a rectangular cover
+ * - 'categoryName' for the primary category name
+ */
 interface Salon {
     _id: string;
     name: string;
     location: string;
+    logo?: string;
+    coverImage?: string;
+    categoryName?: string;
 }
 
 export default function SalonsPage() {
@@ -18,16 +26,17 @@ export default function SalonsPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Fetch salons on mount
+    // 1) Fetch salons on mount
     useEffect(() => {
         const fetchSalons = async () => {
             setLoading(true);
             setError("");
 
             try {
-                const res = await axios.get("http://152.42.243.146/api/salons");
+                // This endpoint should return each salon with logo, coverImage, etc.
+                const res = await axios.get("http://localhost:5001/api/salons");
                 setSalons(res.data);
-                setFilteredSalons(res.data); // initialize filtered list
+                setFilteredSalons(res.data);
             } catch (err) {
                 console.error("Error fetching salons:", err);
                 setError("Failed to fetch salons. Please try again later.");
@@ -39,100 +48,151 @@ export default function SalonsPage() {
         fetchSalons();
     }, []);
 
-    /**
-     * Handle user typing in the search bar.
-     * Filter salons by matching the `name` or `location`.
-     */
+    // 2) Handle search
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const term = e.target.value;
         setSearchTerm(term);
 
         if (!term.trim()) {
-            // If empty, reset
             setFilteredSalons(salons);
             return;
         }
-
-        // Case-insensitive filter on name + location
         const lowerTerm = term.toLowerCase();
         const results = salons.filter(
             (salon) =>
                 salon.name.toLowerCase().includes(lowerTerm) ||
-                salon.location.toLowerCase().includes(lowerTerm)
+                salon.location.toLowerCase().includes(lowerTerm) ||
+                (salon.categoryName && salon.categoryName.toLowerCase().includes(lowerTerm))
         );
         setFilteredSalons(results);
     };
 
-    // If there's an error, show it and bail out
+    // If there's an error, show it
     if (error) {
-        return <p className="p-4 text-red-600">{error}</p>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-neutral-100 px-4">
+                <p className="text-red-500 text-center font-medium">{error}</p>
+            </div>
+        );
     }
 
+    // 3) Render page
     return (
-        <div className="max-w-5xl mx-auto px-4 py-6">
-            <h1 className="text-2xl font-bold mb-4">All Salons</h1>
+        <div className="min-h-screen bg-neutral-100 px-4 py-6">
+            <div className="max-w-5xl mx-auto">
+                <h1 className="text-3xl font-semibold mb-8 text-center tracking-wide">
+                    All Salons
+                </h1>
 
-            {/* Search bar (optional). Remove if not needed. */}
-            <div className="mb-4">
-                <input
-                    type="text"
-                    placeholder="Search salons by name or location..."
-                    value={searchTerm}
-                    onChange={handleSearch}
-                    className="border border-gray-300 rounded w-full p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-
-            {/* Loading state: show a few skeleton cards or a text. */}
-            {loading && (
-                <div className="space-y-4">
-                    <SalonSkeleton />
-                    <SalonSkeleton />
-                    <SalonSkeleton />
+                {/* Search bar */}
+                <div className="mb-8 max-w-md mx-auto">
+                    <input
+                        type="text"
+                        placeholder="Search by name, location, or category..."
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        className="w-full rounded-lg bg-gray-100 border-0 p-3
+             focus:ring-2 focus:ring-neutral-800 transition-colors"
+                    />
                 </div>
-            )}
 
-            {/* No salons found (when not loading and the list is empty). */}
-            {!loading && filteredSalons.length === 0 && (
-                <p className="text-gray-500">No salons found.</p>
-            )}
-
-            {/* Salon list in a responsive grid. */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSalons.map((salon) => (
-                    <div
-                        key={salon._id}
-                        className="border border-gray-100 p-4 rounded shadow-sm bg-white flex flex-col justify-between"
-                    >
-                        <div>
-                            <h2 className="text-lg font-semibold mb-1">{salon.name}</h2>
-                            <p className="text-sm text-gray-600">{salon.location}</p>
-                        </div>
-                        <div className="mt-4">
-                            <Link
-                                href={`/salons/${salon._id}`}
-                                className="inline-block w-full text-center bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors"
-                            >
-                                View Services
-                            </Link>
-                        </div>
+                {/* Loading => skeletons */}
+                {loading && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <SalonSkeleton />
+                        <SalonSkeleton />
+                        <SalonSkeleton />
                     </div>
-                ))}
+                )}
+
+                {/* No results => message */}
+                {!loading && filteredSalons.length === 0 && (
+                    <p className="text-center text-gray-500">No salons found.</p>
+                )}
+
+                {/* Salon list */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {!loading &&
+                        filteredSalons.map((salon) => {
+                            const firstLetter = salon.name.trim().charAt(0).toUpperCase();
+
+                            return (
+                                <Link
+                                    key={salon._id}
+                                    href={`/salons/${salon._id}`}
+                                    className="rounded-lg shadow-md bg-white
+                    hover:bg-neutral-50 transition flex flex-col overflow-hidden"
+                                >
+                                    {/* Cover Image or solid placeholder (no text) */}
+                                    {salon.coverImage && salon.coverImage.trim() !== "" ? (
+                                        <img
+                                            src={salon.coverImage}
+                                            alt={`${salon.name} Cover`}
+                                            className="h-32 w-full object-cover bg-gray-100"
+                                        />
+                                    ) : (
+                                        <div className="h-32 w-full bg-gray-200" />
+                                    )}
+
+                                    {/* Content container: small logo or first letter + text */}
+                                    <div className="p-4 flex items-center gap-3">
+                                        {/* 50×50 logo or first letter */}
+                                        {salon.logo && salon.logo.trim() !== "" ? (
+                                            <img
+                                                src={salon.logo}
+                                                alt={`${salon.name} Logo`}
+                                                className="h-12 w-12 object-contain rounded bg-gray-100 flex-shrink-0"
+                                            />
+                                        ) : (
+                                            <div className="h-12 w-12 bg-gray-200 text-gray-700 flex items-center justify-center rounded flex-shrink-0 font-bold">
+                                                {firstLetter}
+                                            </div>
+                                        )}
+
+                                        {/* Salon info */}
+                                        <div className="flex flex-col">
+                                            <h2 className="text-sm font-semibold tracking-wide">
+                                                {salon.name}
+                                            </h2>
+                                            {salon.categoryName && (
+                                                <p className="text-xs text-gray-500 italic">
+                                                    {salon.categoryName}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-gray-600">{salon.location}</p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                </div>
             </div>
         </div>
     );
 }
 
 /**
- * A simple skeleton "card" to show while data is loading.
- * Feel free to replace with a more elaborate skeleton or spinner.
+ * A Tesla-inspired skeleton card for loading
+ * with space for cover image and a small 50×50 area.
  */
 function SalonSkeleton() {
     return (
-        <div className="animate-pulse border border-gray-200 rounded p-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-            <div className="h-8 bg-gray-200 rounded w-full"></div>
+        <div className="animate-pulse rounded-lg shadow-md bg-white flex flex-col overflow-hidden">
+            {/* Cover skeleton */}
+            <div className="h-32 w-full bg-gray-200"></div>
+
+            {/* Content container */}
+            <div className="p-4 flex items-center gap-3">
+                {/* Logo skeleton (50×50) */}
+                <div className="h-12 w-12 bg-gray-200 rounded flex-shrink-0"></div>
+
+                {/* Text lines */}
+                <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                </div>
+            </div>
         </div>
     );
 }

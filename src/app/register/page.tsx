@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 // Interface for the registration response
 interface RegisterResponse {
     message: string;
-    // Add other response fields if necessary
 }
 
 // Interface for the error response
@@ -17,12 +16,11 @@ interface ErrorResponse {
 
 export default function RegisterPage() {
     const router = useRouter();
-    const [username, setUsername] = useState<string>("");
-    const [phoneNumber, setPhoneNumber] = useState<string>("");
-    const [email, setEmail] = useState<string>("");
-    const [password, setPassword] = useState<string>("");
-    const [role, setRole] = useState<string>("user");
-    const [error, setError] = useState<string>("");
+    const [username, setUsername] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
     // Handle form submission for user registration
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -31,13 +29,13 @@ export default function RegisterPage() {
 
         try {
             const response = await axios.post<RegisterResponse>(
-                "http://152.42.243.146/api/auth/register",
+                "http://localhost:5001/api/auth/register",
                 {
                     username,
                     phoneNumber,
                     email,
                     password,
-                    role
+                    // role: "user" // Uncomment if your backend explicitly needs this
                 }
             );
 
@@ -59,82 +57,100 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <form onSubmit={handleSubmit} className="border p-6 space-y-4 bg-white rounded shadow-md w-full max-w-sm">
-                <h1 className="text-2xl font-bold text-center">Register</h1>
-                {error && <p className="text-red-600 text-center">{error}</p>}
+        <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-100 px-4">
+            <h1 className="text-3xl font-semibold mb-8 text-center tracking-wide">
+                Register
+            </h1>
+            <form
+                onSubmit={handleSubmit}
+                className="w-full max-w-md bg-white rounded-lg shadow-md p-8 flex flex-col space-y-6"
+            >
+                {error && (
+                    <p className="text-red-500 text-center font-medium">{error}</p>
+                )}
 
-                <div>
-                    <label htmlFor="username" className="block font-semibold mb-1">Username</label>
+                {/* Username */}
+                <div className="flex flex-col">
+                    <label
+                        htmlFor="username"
+                        className="text-sm font-medium text-gray-700 mb-2"
+                    >
+                        Username
+                    </label>
                     <input
                         id="username"
                         type="text"
-                        placeholder="Username"
-                        className="border p-2 w-full rounded"
+                        placeholder="Enter your username"
+                        className="rounded-lg bg-gray-100 border-0 p-3 focus:ring-2 focus:ring-neutral-800 transition-colors"
                         value={username}
-                        onChange={e => setUsername(e.target.value)}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
                     />
                 </div>
 
-                <div>
-                    <label htmlFor="phoneNumber" className="block font-semibold mb-1">Phone Number</label>
+                {/* Phone Number */}
+                <div className="flex flex-col">
+                    <label
+                        htmlFor="phoneNumber"
+                        className="text-sm font-medium text-gray-700 mb-2"
+                    >
+                        Phone Number
+                    </label>
                     <input
                         id="phoneNumber"
                         type="text"
-                        placeholder="Phone Number"
-                        className="border p-2 w-full rounded"
+                        placeholder="Enter your phone number"
+                        className="rounded-lg bg-gray-100 border-0 p-3 focus:ring-2 focus:ring-neutral-800 transition-colors"
                         value={phoneNumber}
-                        onChange={e => setPhoneNumber(e.target.value)}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
                         required
                     />
                 </div>
 
-                <div>
-                    <label htmlFor="email" className="block font-semibold mb-1">Email</label>
+                {/* Email */}
+                <div className="flex flex-col">
+                    <label
+                        htmlFor="email"
+                        className="text-sm font-medium text-gray-700 mb-2"
+                    >
+                        Email
+                    </label>
                     <input
                         id="email"
                         type="email"
-                        placeholder="Email"
-                        className="border p-2 w-full rounded"
+                        placeholder="you@example.com"
+                        className="rounded-lg bg-gray-100 border-0 p-3 focus:ring-2 focus:ring-neutral-800 transition-colors"
                         value={email}
-                        onChange={e => setEmail(e.target.value)}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                     />
                 </div>
 
-                <div>
-                    <label htmlFor="password" className="block font-semibold mb-1">Password</label>
+                {/* Password */}
+                <div className="flex flex-col">
+                    <label
+                        htmlFor="password"
+                        className="text-sm font-medium text-gray-700 mb-2"
+                    >
+                        Password
+                    </label>
                     <input
                         id="password"
                         type="password"
-                        placeholder="Password"
-                        className="border p-2 w-full rounded"
+                        placeholder="Enter a secure password"
+                        className="rounded-lg bg-gray-100 border-0 p-3 focus:ring-2 focus:ring-neutral-800 transition-colors"
                         value={password}
-                        onChange={e => setPassword(e.target.value)}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
                     />
                 </div>
 
-                <div>
-                    <label htmlFor="role" className="block font-semibold mb-1">Role</label>
-                    <select
-                        id="role"
-                        value={role}
-                        onChange={e => setRole(e.target.value)}
-                        className="border p-2 w-full rounded"
-                        required
-                    >
-                        <option value="user">User</option>
-                        <option value="owner">Owner</option>
-                    </select>
-                </div>
-
+                {/* Submit button */}
                 <button
                     type="submit"
-                    className="bg-green-600 text-white px-4 py-2 w-full rounded hover:bg-green-700 transition-colors"
+                    className="bg-neutral-900 text-white text-sm font-medium py-3 rounded-lg hover:bg-neutral-700 transition-colors"
                 >
-                    Register
+                    Create Account
                 </button>
             </form>
         </div>
