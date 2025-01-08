@@ -93,7 +93,7 @@ function BookingPopup({
         setMessage("");
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
         axios
-            .get<{ times: string[] }[]>(`http://localhost:5001/api/services/${service._id}/availability`, {
+            .get<{ times: string[] }[]>(`http://152.42.243.146/api/services/${service._id}/availability`, {
                 params: { date: dateStr },
             })
             .then((res) => {
@@ -127,7 +127,7 @@ function BookingPopup({
         try {
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
             const res = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://152.42.243.146/api/appointments",
                 {
                     serviceId: service._id,
                     date: dateStr,
@@ -257,12 +257,12 @@ export default function SalonDetailPage() {
         (async () => {
             try {
                 const salonRes = await axios.get<Salon>(
-                    `http://localhost:5001/api/salons/${params.id}`
+                    `http://152.42.243.146/api/salons/${params.id}`
                 );
                 setSalon(salonRes.data);
 
                 const servicesRes = await axios.get<Service[]>(
-                    `http://localhost:5001/api/services/salon/${params.id}`
+                    `http://152.42.243.146/api/services/salon/${params.id}`
                 );
                 setServices(servicesRes.data);
             } catch (err) {

@@ -49,7 +49,7 @@ export default function ServiceDetailPage() {
         (async () => {
             try {
                 const res = await axios.get<ServiceData>(
-                    `http://localhost:5001/api/services/${id}`
+                    `http://152.42.243.146/api/services/${id}`
                 );
                 setService(res.data);
             } catch (err) {
@@ -145,7 +145,7 @@ function OrderPopup({
 
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
         axios
-            .get<{ times: string[] }[]>(`http://localhost:5001/api/services/${serviceId}/availability`, {
+            .get<{ times: string[] }[]>(`http://152.42.243.146/api/services/${serviceId}/availability`, {
                 params: { date: dateStr },
             })
             .then((res) => {
@@ -178,7 +178,7 @@ function OrderPopup({
             }
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
             const res = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://152.42.243.146/api/appointments",
                 {
                     serviceId,
                     date: dateStr,
