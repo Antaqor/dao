@@ -2,6 +2,9 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import AdaptiveUserInterface from "./AdaptiveUserInterface";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
 
 const inter = Inter({ subsets: ["latin"] });
 

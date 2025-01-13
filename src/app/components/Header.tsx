@@ -8,10 +8,10 @@ import { Bars3Icon } from "@heroicons/react/24/outline";
 export default function Header() {
     const router = useRouter();
 
-    // Controls the visibility of the social media popup
+    // Controls whether the popup overlay is visible
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // Ref for the popup menu; used to detect outside clicks (optional)
+    // Ref to the popup container (used to detect outside clicks)
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Toggle the menu open/close
@@ -19,22 +19,23 @@ export default function Header() {
         setIsMenuOpen(!isMenuOpen);
     };
 
-    // Close the menu if user clicks outside of it (optional, for convenience)
+    // Close the popup if user clicks outside of it
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (
+                isMenuOpen &&
                 menuRef.current &&
-                !menuRef.current.contains(event.target as Node) &&
-                (event.target as Node).nodeName !== "BUTTON"
+                !menuRef.current.contains(event.target as Node)
             ) {
                 setIsMenuOpen(false);
             }
         }
+
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, []);
+    }, [isMenuOpen]);
 
     return (
         <>
@@ -55,7 +56,7 @@ export default function Header() {
           px-4
         "
             >
-                {/* Left: Profile Skeleton */}
+                {/* Left: Profile Placeholder */}
                 <div
                     className="
             w-8
@@ -84,66 +85,97 @@ export default function Header() {
                 </Link>
 
                 {/* Right: Burger Menu */}
-                <div className="relative">
-                    <button
-                        onClick={handleMenuToggle}
-                        className="
-              text-black
-              hover:text-gray-600
-              transition
-              p-2
-            "
-                        aria-label="Open Menu"
-                    >
-                        <Bars3Icon className="h-6 w-6" />
-                    </button>
+                <button
+                    onClick={handleMenuToggle}
+                    className="
+            text-black
+            hover:text-gray-600
+            transition
+            p-2
+          "
+                    aria-label="Open Menu"
+                >
+                    <Bars3Icon className="h-6 w-6" />
+                </button>
+            </header>
 
-                    {/* Popup Menu for Social Links */}
-                    {isMenuOpen && (
-                        <div
-                            ref={menuRef}
+            {/* Spacer below the header so the main content isn't hidden underneath */}
+            <div className="mt-16" />
+
+            {/* Full-page overlay when the menu is open */}
+            {isMenuOpen && (
+                <div
+                    className="
+            fixed
+            inset-0
+            z-50
+            flex
+            items-center
+            justify-center
+            bg-black
+            bg-opacity-50
+            overflow-x-hidden
+            overflow-y-auto
+          "
+                >
+                    {/* Centered white popup container, larger than before */}
+                    <div
+                        ref={menuRef}
+                        className="
+              bg-white
+              rounded-lg
+              shadow-xl
+              p-8
+              w-full
+              max-w-2xl
+              relative
+              mx-4
+            "
+                    >
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setIsMenuOpen(false)}
                             className="
                 absolute
-                right-0
-                mt-2
-                w-40
-                bg-white
-                border
-                border-gray-300
-                rounded-md
-                shadow-lg
-                py-2
-                flex
-                flex-col
-                items-start
-                z-50
+                top-4
+                right-4
+                text-gray-400
+                hover:text-gray-600
+                transition
+                text-2xl
               "
+                            aria-label="Close Menu"
                         >
-                            <button
-                                onClick={() => setIsMenuOpen(false)}
-                                className="
-                  self-end
-                  mr-2
-                  text-gray-400
-                  hover:text-gray-600
-                  transition
-                "
-                                aria-label="Close Menu"
-                            >
-                                &times;
-                            </button>
+                            &times;
+                        </button>
+
+                        {/* Sample Text Content */}
+                        <h2 className="text-2xl font-semibold mb-4">Welcome to the Modal</h2>
+                        <p className="text-gray-600 mb-4">
+                            This is a larger, modern-styled popup. Below are some links and
+                            sample text to demonstrate how your modal might look with real
+                            content.
+                        </p>
+                        <p className="text-gray-600 mb-4">
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque
+                            feugiat ultricies elit, a finibus dui semper et. Duis feugiat
+                            consequat felis, eu dictum nibh maximus vel. Sed scelerisque porta
+                            est, in convallis lectus consectetur quis. Morbi lorem libero,
+                            facilisis non erat in, luctus dictum ipsum.
+                        </p>
+
+                        {/* Social Links */}
+                        <div className="mt-8 flex flex-col space-y-2">
                             <a
                                 href="https://www.facebook.com/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="
+                  text-blue-600
+                  hover:text-blue-800
+                  transition
+                  text-base
                   block
-                  w-full
-                  px-4
-                  py-1
-                  text-sm
-                  text-gray-700
-                  hover:bg-gray-100
                 "
                             >
                                 Facebook
@@ -153,13 +185,11 @@ export default function Header() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="
+                  text-pink-600
+                  hover:text-pink-800
+                  transition
+                  text-base
                   block
-                  w-full
-                  px-4
-                  py-1
-                  text-sm
-                  text-gray-700
-                  hover:bg-gray-100
                 "
                             >
                                 Instagram
@@ -169,27 +199,19 @@ export default function Header() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="
+                  text-red-600
+                  hover:text-red-800
+                  transition
+                  text-base
                   block
-                  w-full
-                  px-4
-                  py-1
-                  text-sm
-                  text-gray-700
-                  hover:bg-gray-100
                 "
                             >
                                 YouTube
                             </a>
                         </div>
-                    )}
+                    </div>
                 </div>
-            </header>
-
-            {/*
-        Spacer below the header so the main content
-        isn't hidden underneath this fixed header.
-      */}
-            <div className="mt-16" />
+            )}
         </>
     );
 }
