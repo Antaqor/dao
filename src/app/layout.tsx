@@ -1,31 +1,22 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
-import ClientWrapper from "./components/ClientWrapper";
-import Header from "./components/Header";
+import type { Metadata } from "next";
+import AdaptiveUserInterface from "./AdaptiveUserInterface";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-    title: "Salon Booking App",
-    description: "Modern salon booking system",
+// Server-only metadata
+export const metadata: Metadata = {
+    title: "Salon Booking System",
+    description: "A next-generation scheduling and booking platform",
 };
 
-export default function RootLayout({
-                                       children,
-                                   }: {
-    children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className={inter.className}>
-        <body className="min-h-screen bg-white">
-        <ClientWrapper>
-            {/* Fixed header at the top */}
-            <Header />
-            {/* Main content in the center, spaced around fixed header & sidebars */}
-            <main className="min-h-screen bg-white">
-                {children}
-            </main>
-        </ClientWrapper>
+        <html lang="en">
+        <body className={`min-h-screen bg-gray-50 ${inter.className}`}>
+        {/* Client layout for mobile vs. desktop */}
+        <AdaptiveUserInterface>{children}</AdaptiveUserInterface>
         </body>
         </html>
     );
