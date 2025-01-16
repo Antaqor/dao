@@ -31,9 +31,6 @@ export default function Header() {
 
                 <div className="ml-auto flex items-center gap-4">
                     {/* If logged in, optionally show the username */}
-                    {loggedIn && user && (
-                        <span className="text-sm text-gray-600">Hello, {user.username}</span>
-                    )}
 
                     {loggedIn ? (
                         <button

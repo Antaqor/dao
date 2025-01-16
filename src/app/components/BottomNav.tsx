@@ -35,14 +35,6 @@ const BottomNav: React.FC = () => {
                     <ClockIcon className="h-6 w-6 sm:h-7 sm:w-7" />
                 </button>
 
-                {/* SERVICE */}
-                <button
-                    onClick={() => router.push("/create-service")}
-                    className="flex flex-col items-center text-black hover:text-gray-600 transition p-1"
-                >
-                    <BriefcaseIcon className="h-6 w-6 sm:h-7 sm:w-7" />
-                </button>
-
                 {/* PROFILE */}
                 <button
                     onClick={() => router.push("/profile")}

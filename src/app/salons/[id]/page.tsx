@@ -1,4 +1,3 @@
-// File: /app/salons/[id]/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -9,10 +8,11 @@ import {
     ShareIcon,
     XMarkIcon,
 } from "@heroicons/react/24/solid";
+
 import MonthCalendar, { MonthData, DayStatus } from "@/app/components/MonthCalendar";
 import { useAuth } from "@/app/context/AuthContext";
 
-/** Data models */
+/** Data models (same as your original code) */
 interface HoursOfOperation {
     [day: string]: string;
 }
@@ -34,7 +34,7 @@ interface Service {
     durationMinutes: number;
 }
 
-/** Helper: format "HH:mm" into "H:MM AM/PM" */
+/** Utility: format "HH:mm" => "H:MM AM/PM" */
 function format24to12(time24: string) {
     const [h, m] = time24.split(":");
     let hour = parseInt(h, 10);
@@ -62,13 +62,13 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     const [message, setMessage] = useState("");
     const [done, setDone] = useState(false);
 
-    // QPay states
+    // Payment / QPay states
     const [invoiceId, setInvoiceId] = useState("");
     const [qrUrl, setQrUrl] = useState("");
     const [paymentDone, setPaymentDone] = useState(false);
     const [checkingPayment, setCheckingPayment] = useState(false);
 
-    // 1) Sample data for calendar
+    // 1) Load a sample calendar (January data)
     useEffect(() => {
         const januaryDays: DayStatus[] = [
             { day: 6, status: "goingFast" },
@@ -76,10 +76,8 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         ];
         setMonthData({ year: 2025, month: 0, days: januaryDays });
     }, []);
-    console.log("BookingPopup user:", user);
-    console.log("BookingPopup accessToken:", user?.accessToken);
 
-    // 2) Fetch timeslots whenever selectedDay changes
+    // 2) Fetch timeslots whenever user picks a day
     useEffect(() => {
         if (!selectedDay) {
             setTimes([]);
@@ -104,7 +102,9 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             .finally(() => setLoadingTimes(false));
     }, [selectedDay, service._id]);
 
-    // 3) Book an appointment => invoice
+    /**
+     * 3) Book appointment => generate QPay invoice => schedule push reminder
+     */
     async function handleBookTime() {
         if (!user) {
             setMessage("Нэвтэрч орно уу (Token алга).");
@@ -121,6 +121,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
 
         try {
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
+            // a) Book appointment
             const apptRes = await axios.post(
                 "http://localhost:5001/api/appointments",
                 {
@@ -135,7 +136,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             if (apptRes.status === 201) {
                 setMessage("Цаг амжилттай захиалагдлаа! Төлбөрийн нэхэмжлэл үүсгэж байна...");
 
-                // create QPay invoice
+                // b) Generate QPay invoice
                 const invoiceRes = await axios.post<{
                     success?: boolean;
                     invoiceData?: { invoice_id?: string };
@@ -153,6 +154,16 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                 } else {
                     setMessage("QPay Invoice үүсгэхэд алдаа гарлаа.");
                 }
+
+                // c) Optionally schedule push reminder (e.g., 30 min prior)
+                const year = 2025;
+                const month = 0; // January
+                const dayNum = selectedDay;
+                const [hh, mm] = selectedTime.split(":").map(Number);
+                const appointmentDate = new Date(year, month, dayNum, hh, mm);
+
+                await handleScheduleReminder(appointmentDate);
+
                 setDone(true);
             } else {
                 setMessage("Захиалга үүсгэхэд алдаа гарлаа.");
@@ -166,7 +177,21 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
     }
 
-    // 4) Check Payment
+    /** c) Call your server route to schedule a push reminder (30 min before) */
+    async function handleScheduleReminder(appointmentDate: Date) {
+        try {
+            await axios.post("http://localhost:5001/api/notifications/schedule", {
+                appointmentDate, // pass ISO or any relevant data
+            });
+            console.log("Scheduled push reminder successfully!");
+        } catch (err) {
+            console.error("Error scheduling push reminder:", err);
+        }
+    }
+
+    /**
+     * 4) Check Payment Status
+     */
     async function handleCheckPayment() {
         if (!invoiceId) {
             setMessage("Invoice ID алга байна. Төлбөр шалгах боломжгүй.");
@@ -196,6 +221,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
     }
 
+    // Return the popup UI
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
@@ -211,6 +237,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                     <XMarkIcon className="w-6 h-6" />
                 </button>
 
+                {/* If not done => show booking flow. If done => show final screen */}
                 {!done ? (
                     <>
                         <h2 className="text-2xl font-bold text-neutral-900 mb-4">
@@ -219,7 +246,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                 {service.price.toLocaleString()}₮
               </span>
                         </h2>
-                        {/* Calendar */}
+
                         {monthData && (
                             <MonthCalendar
                                 monthData={monthData}
@@ -235,7 +262,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                                 {message}
                             </p>
                         )}
-                        {/* Time slots */}
+
                         {times.length > 0 && !loadingTimes && (
                             <div className="mt-4 grid grid-cols-3 gap-3">
                                 {times.map((t) => (
@@ -269,7 +296,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                         </div>
                     </>
                 ) : (
-                    // Done booking => Payment status
+                    // "Done" UI => Payment + final message
                     <div className="text-center px-4 py-6">
                         {paymentDone ? (
                             <h2 className="text-xl font-bold text-green-600 mb-3">
@@ -313,7 +340,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     );
 }
 
-/** The main page: fetch one salon + services, display them, open BookingPopup */
+/** The main SalonDetailPage: same as before, with a booking popup. */
 export default function SalonDetailPage() {
     const params = useParams() as { id?: string };
     const [salon, setSalon] = useState<Salon | null>(null);
@@ -325,10 +352,9 @@ export default function SalonDetailPage() {
     const phoneNumber = "+97694641031";
     const shareUrl = `http://localhost:3000/salons/${params.id}`;
 
-    // 1) Fetch salon & services
+    // 1) Fetch the salon & its services
     useEffect(() => {
         if (!params.id) return;
-
         (async () => {
             try {
                 const salonRes = await axios.get<Salon>(
@@ -347,7 +373,7 @@ export default function SalonDetailPage() {
         })();
     }, [params.id]);
 
-    // 2) “Share” logic
+    // 2) Share logic (unchanged)
     const handleShare = async () => {
         try {
             if (navigator.share) {
@@ -375,7 +401,7 @@ export default function SalonDetailPage() {
         setSelectedService(null);
     }
 
-    // 4) Error or loading states
+    // 4) Error / loading states
     if (error) {
         return (
             <div className="flex min-h-screen bg-white">
@@ -395,12 +421,13 @@ export default function SalonDetailPage() {
         );
     }
 
-    // 5) Construct map link
+    // 5) Map link for location
     const googleMapsLink =
         salon.lat != null && salon.lng != null
             ? `https://maps.google.com/?q=${salon.lat},${salon.lng}`
             : `https://maps.google.com/?q=${encodeURIComponent(salon.location)}`;
 
+    // Render
     return (
         <div className="flex min-h-screen bg-white">
             <main className="flex-1 mx-auto max-w-5xl px-4 sm:px-6 py-6">
@@ -415,7 +442,7 @@ export default function SalonDetailPage() {
                     </div>
                 )}
 
-                {/* Salon info */}
+                {/* Salon info & share button */}
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between mb-4">
                     <div className="flex items-start gap-3">
                         <div className="h-20 w-20 bg-white rounded-full overflow-hidden border border-gray-300">
@@ -458,7 +485,7 @@ export default function SalonDetailPage() {
                     </div>
                 </div>
 
-                {/* Services */}
+                {/* List of services */}
                 {services.length === 0 ? (
                     <p className="text-sm text-gray-500">Үйлчилгээ олдсонгүй.</p>
                 ) : (
@@ -485,7 +512,7 @@ export default function SalonDetailPage() {
                     </ul>
                 )}
 
-                {/* Map Link */}
+                {/* Map link */}
                 <div className="mt-4">
                     <a
                         href={googleMapsLink}
@@ -498,7 +525,7 @@ export default function SalonDetailPage() {
                 </div>
             </main>
 
-            {/* The popup */}
+            {/* The booking popup */}
             {showPopup && selectedService && (
                 <BookingPopup service={selectedService} onClose={closePopup} />
             )}
