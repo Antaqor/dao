@@ -1,8 +1,8 @@
+// File: /app/salons/[id]/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import {
     PhoneIcon,
@@ -10,11 +10,12 @@ import {
     XMarkIcon,
 } from "@heroicons/react/24/solid";
 import MonthCalendar, { MonthData, DayStatus } from "@/app/components/MonthCalendar";
+import { useAuth } from "@/app/context/AuthContext";
 
+/** Data models */
 interface HoursOfOperation {
     [day: string]: string;
 }
-
 interface Salon {
     _id: string;
     name: string;
@@ -26,7 +27,6 @@ interface Salon {
     lat?: number | null;
     lng?: number | null;
 }
-
 interface Service {
     _id: string;
     name: string;
@@ -34,13 +34,7 @@ interface Service {
     durationMinutes: number;
 }
 
-interface SessionUser {
-    id?: string;
-    email?: string;
-    role?: string;
-    accessToken?: string;
-}
-
+/** Helper: format "HH:mm" into "H:MM AM/PM" */
 function format24to12(time24: string) {
     const [h, m] = time24.split(":");
     let hour = parseInt(h, 10);
@@ -50,26 +44,31 @@ function format24to12(time24: string) {
     return `${hour}:${String(minute).padStart(2, "0")} ${ampm}`;
 }
 
+/** Popup props */
 interface BookingPopupProps {
     service: Service;
     onClose: () => void;
 }
 
+/** The Booking Popup component */
 function BookingPopup({ service, onClose }: BookingPopupProps) {
-    const { data: session } = useSession();
+    const { user } = useAuth(); // read from context => user?.accessToken
     const [monthData, setMonthData] = useState<MonthData | null>(null);
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
     const [times, setTimes] = useState<string[]>([]);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
     const [loadingTimes, setLoadingTimes] = useState(false);
     const [message, setMessage] = useState("");
     const [done, setDone] = useState(false);
 
+    // QPay states
     const [invoiceId, setInvoiceId] = useState("");
     const [qrUrl, setQrUrl] = useState("");
     const [paymentDone, setPaymentDone] = useState(false);
     const [checkingPayment, setCheckingPayment] = useState(false);
 
+    // 1) Sample data for calendar
     useEffect(() => {
         const januaryDays: DayStatus[] = [
             { day: 6, status: "goingFast" },
@@ -77,7 +76,10 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         ];
         setMonthData({ year: 2025, month: 0, days: januaryDays });
     }, []);
+    console.log("BookingPopup user:", user);
+    console.log("BookingPopup accessToken:", user?.accessToken);
 
+    // 2) Fetch timeslots whenever selectedDay changes
     useEffect(() => {
         if (!selectedDay) {
             setTimes([]);
@@ -85,11 +87,13 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
         setLoadingTimes(true);
         setMessage("");
+
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
         axios
-            .get<{ times: string[] }[]>(`http://68.183.191.149/api/services/${service._id}/availability`, {
-                params: { date: dateStr },
-            })
+            .get<{ times: string[] }[]>(
+                `http://localhost:5001/api/services/${service._id}/availability`,
+                { params: { date: dateStr } }
+            )
             .then((res) => {
                 const allTimes = res.data.flatMap((b) => b.times || []);
                 setTimes([...new Set(allTimes)].sort());
@@ -100,12 +104,12 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             .finally(() => setLoadingTimes(false));
     }, [selectedDay, service._id]);
 
+    // 3) Book an appointment => invoice
     async function handleBookTime() {
-        if (!session?.user) {
+        if (!user) {
             setMessage("Нэвтэрч орно уу (Token алга).");
             return;
         }
-        const user = session.user as SessionUser;
         if (!user.accessToken) {
             setMessage("Token алга байна. Дахин нэвтэрнэ үү.");
             return;
@@ -114,10 +118,11 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             setMessage("Өдөр болон цаг сонгоно уу.");
             return;
         }
+
         try {
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
             const apptRes = await axios.post(
-                "http://68.183.191.149/api/appointments",
+                "http://localhost:5001/api/appointments",
                 {
                     serviceId: service._id,
                     date: dateStr,
@@ -126,16 +131,20 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                 },
                 { headers: { Authorization: `Bearer ${user.accessToken}` } }
             );
+
             if (apptRes.status === 201) {
                 setMessage("Цаг амжилттай захиалагдлаа! Төлбөрийн нэхэмжлэл үүсгэж байна...");
+
+                // create QPay invoice
                 const invoiceRes = await axios.post<{
                     success?: boolean;
                     invoiceData?: { invoice_id?: string };
                     qrDataUrl?: string;
-                }>("http://68.183.191.149/api/payments/create-invoice", {
+                }>("http://localhost:5001/api/payments/create-invoice", {
                     invoiceCode: "FORU_INVOICE",
                     amount: service.price,
                 });
+
                 if (invoiceRes.data?.success) {
                     const inv = invoiceRes.data.invoiceData;
                     setInvoiceId(inv?.invoice_id || "");
@@ -148,7 +157,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             } else {
                 setMessage("Захиалга үүсгэхэд алдаа гарлаа.");
             }
-        } catch (err: unknown) {
+        } catch (err) {
             if (axios.isAxiosError(err) && err.response?.status === 401) {
                 setMessage("Token буруу буюу хугацаа дууссан. Дахин нэвтэрнэ үү.");
             } else {
@@ -157,6 +166,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
     }
 
+    // 4) Check Payment
     async function handleCheckPayment() {
         if (!invoiceId) {
             setMessage("Invoice ID алга байна. Төлбөр шалгах боломжгүй.");
@@ -164,18 +174,15 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
         setMessage("");
         setCheckingPayment(true);
+
         try {
             const checkRes = await axios.post<{
-                checkResult?: {
-                    rows?: Array<{
-                        payment_status?: string;
-                    }>;
-                };
-            }>("http://68.183.191.149/api/payments/check-invoice", {
-                invoiceId,
-            });
+                checkResult?: { rows?: Array<{ payment_status?: string }> };
+            }>("http://localhost:5001/api/payments/check-invoice", { invoiceId });
+
             const payRow = checkRes.data.checkResult?.rows?.[0];
             const payStatus = payRow?.payment_status || "UNPAID";
+
             if (payStatus === "PAID") {
                 setPaymentDone(true);
                 setMessage("Төлбөр амжилттай хийгдсэн!");
@@ -209,9 +216,10 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                         <h2 className="text-2xl font-bold text-neutral-900 mb-4">
                             {service.name}
                             <span className="ml-2 text-base text-primary font-medium">
-                                {service.price.toLocaleString()}₮
-                            </span>
+                {service.price.toLocaleString()}₮
+              </span>
                         </h2>
+                        {/* Calendar */}
                         {monthData && (
                             <MonthCalendar
                                 monthData={monthData}
@@ -223,8 +231,11 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                             <p className="mt-3 text-sm text-gray-500">Цаг ачаалж байна...</p>
                         )}
                         {message && (
-                            <p className="mt-3 text-sm text-red-600 font-medium">{message}</p>
+                            <p className="mt-3 text-sm text-red-600 font-medium">
+                                {message}
+                            </p>
                         )}
+                        {/* Time slots */}
                         {times.length > 0 && !loadingTimes && (
                             <div className="mt-4 grid grid-cols-3 gap-3">
                                 {times.map((t) => (
@@ -258,9 +269,12 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                         </div>
                     </>
                 ) : (
+                    // Done booking => Payment status
                     <div className="text-center px-4 py-6">
                         {paymentDone ? (
-                            <h2 className="text-xl font-bold text-green-600 mb-3">Төлбөр амжилттай!</h2>
+                            <h2 className="text-xl font-bold text-green-600 mb-3">
+                                Төлбөр амжилттай!
+                            </h2>
                         ) : (
                             <h2 className="text-xl font-bold text-green-600 mb-3">
                                 Цаг амжилттай захиалагдлаа!
@@ -299,6 +313,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     );
 }
 
+/** The main page: fetch one salon + services, display them, open BookingPopup */
 export default function SalonDetailPage() {
     const params = useParams() as { id?: string };
     const [salon, setSalon] = useState<Salon | null>(null);
@@ -310,17 +325,19 @@ export default function SalonDetailPage() {
     const phoneNumber = "+97694641031";
     const shareUrl = `http://localhost:3000/salons/${params.id}`;
 
+    // 1) Fetch salon & services
     useEffect(() => {
         if (!params.id) return;
+
         (async () => {
             try {
                 const salonRes = await axios.get<Salon>(
-                    `http://68.183.191.149/api/salons/${params.id}`
+                    `http://localhost:5001/api/salons/${params.id}`
                 );
                 setSalon(salonRes.data);
 
                 const servicesRes = await axios.get<Service[]>(
-                    `http://68.183.191.149/api/services/salon/${params.id}`
+                    `http://localhost:5001/api/services/salon/${params.id}`
                 );
                 setServices(servicesRes.data);
             } catch (err) {
@@ -330,6 +347,7 @@ export default function SalonDetailPage() {
         })();
     }, [params.id]);
 
+    // 2) “Share” logic
     const handleShare = async () => {
         try {
             if (navigator.share) {
@@ -347,16 +365,17 @@ export default function SalonDetailPage() {
         }
     };
 
+    // 3) Open/close the booking popup
     function openPopup(svc: Service) {
         setSelectedService(svc);
         setShowPopup(true);
     }
-
     function closePopup() {
         setShowPopup(false);
         setSelectedService(null);
     }
 
+    // 4) Error or loading states
     if (error) {
         return (
             <div className="flex min-h-screen bg-white">
@@ -366,7 +385,6 @@ export default function SalonDetailPage() {
             </div>
         );
     }
-
     if (!salon) {
         return (
             <div className="flex min-h-screen bg-white">
@@ -377,6 +395,7 @@ export default function SalonDetailPage() {
         );
     }
 
+    // 5) Construct map link
     const googleMapsLink =
         salon.lat != null && salon.lng != null
             ? `https://maps.google.com/?q=${salon.lat},${salon.lng}`
@@ -385,6 +404,7 @@ export default function SalonDetailPage() {
     return (
         <div className="flex min-h-screen bg-white">
             <main className="flex-1 mx-auto max-w-5xl px-4 sm:px-6 py-6">
+                {/* Cover image */}
                 {salon.coverImage && (
                     <div className="h-60 bg-gray-200 overflow-hidden mb-6 rounded-md">
                         <img
@@ -395,6 +415,7 @@ export default function SalonDetailPage() {
                     </div>
                 )}
 
+                {/* Salon info */}
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between mb-4">
                     <div className="flex items-start gap-3">
                         <div className="h-20 w-20 bg-white rounded-full overflow-hidden border border-gray-300">
@@ -437,6 +458,7 @@ export default function SalonDetailPage() {
                     </div>
                 </div>
 
+                {/* Services */}
                 {services.length === 0 ? (
                     <p className="text-sm text-gray-500">Үйлчилгээ олдсонгүй.</p>
                 ) : (
@@ -463,6 +485,7 @@ export default function SalonDetailPage() {
                     </ul>
                 )}
 
+                {/* Map Link */}
                 <div className="mt-4">
                     <a
                         href={googleMapsLink}
@@ -474,6 +497,8 @@ export default function SalonDetailPage() {
                     </a>
                 </div>
             </main>
+
+            {/* The popup */}
             {showPopup && selectedService && (
                 <BookingPopup service={selectedService} onClose={closePopup} />
             )}

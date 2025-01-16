@@ -29,7 +29,7 @@ const BottomNav: React.FC = () => {
 
                 {/* TIME */}
                 <button
-                    onClick={() => router.push("/create-time")}
+                    onClick={() => router.push("/orders")}
                     className="flex flex-col items-center text-black hover:text-gray-600 transition p-1"
                 >
                     <ClockIcon className="h-6 w-6 sm:h-7 sm:w-7" />
