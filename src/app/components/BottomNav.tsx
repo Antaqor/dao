@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import {
     HomeIcon,
@@ -11,19 +11,11 @@ import {
 
 const BottomNav: React.FC = () => {
     const router = useRouter();
-    const navRef = useRef<HTMLElement>(null);
-    const [navHeight, setNavHeight] = useState<number>(0);
 
     // Get nav height on initial mount if needed
-    useEffect(() => {
-        if (navRef.current) {
-            setNavHeight(navRef.current.offsetHeight);
-        }
-    }, []);
 
     return (
         <nav
-            ref={navRef}
             className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 z-50 shadow-sm"
         >
             <div className="flex justify-around items-center py-3 sm:py-4">
