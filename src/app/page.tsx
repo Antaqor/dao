@@ -46,7 +46,7 @@ const categoryIcons: Record<string, IconType> = {
 ------------------------------------------- */
 function CategorySkeletonRow() {
     return (
-        <div className="flex flex-wrap justify-center gap-4 mb-8">
+        <div className="flex flex-wrap justify-center gap-4 mb-6">
             {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="w-20 h-8 bg-gray-200 rounded-full animate-pulse" />
             ))}
@@ -56,7 +56,7 @@ function CategorySkeletonRow() {
 
 function ServiceSkeletonGrid() {
     return (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mb-8">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mb-6">
             {Array.from({ length: 8 }).map((_, i) => (
                 <li
                     key={i}
@@ -72,15 +72,11 @@ function ServiceSkeletonGrid() {
 }
 
 /* -------------------------------------------
-   2) Hero Section (Single Image, Full Cover)
+   2) Hero Section
 ------------------------------------------- */
 function HeroImage() {
     return (
-        <section
-            // Remove default margin, set height to fill mobile screens from header to search
-            className="relative w-full h-screen sm:h-[600px] overflow-hidden bg-black p-0 m-0"
-            // Alternatively: h-[calc(100vh - 56px)] if your header is 56px, etc.
-        >
+        <section className="relative w-full h-[500px] sm:h-[750px] overflow-hidden bg-black p-0 m-0">
             <img
                 src="https://dsifg2gm0y83d.cloudfront.net/bundles/assets/images/refresh_hero.0fa0a3d07b8945c9b73e.png"
                 alt="Hero"
@@ -106,12 +102,10 @@ function CategoriesCarousel({
                                 selectedCategoryId,
                                 setSelectedCategoryId,
                             }: CategoriesCarouselProps) {
-    // Loading skeleton
     if (loading) {
         return <CategorySkeletonRow />;
     }
 
-    // If no categories
     if (!loading && categories.length === 0) {
         return (
             <p className="text-gray-500 text-center mb-8">
@@ -121,7 +115,7 @@ function CategoriesCarousel({
     }
 
     return (
-        <section className="mb-4"> {/* small bottom margin */}
+        <section className="mt-6 mb-6 px-4">
             <Swiper
                 modules={[Mousewheel]}
                 slidesPerView={2.2}
@@ -195,7 +189,7 @@ function AllServicesCarousel({
 
     if (!loading && !error && services.length > 0) {
         return (
-            <section className="mb-8">
+            <section className="px-4 mb-6">
                 <h2 className="text-xl sm:text-2xl font-semibold mb-4">Бүх үйлчилгээ</h2>
                 <Swiper
                     modules={[Mousewheel]}
@@ -268,19 +262,15 @@ export default function HomePage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
-    // Replace with your real server or env variable
-    const BASE_URL = "http://68.183.191.149";
+    const BASE_URL = "http://localhost:5001";
 
-    /*
-      1) Fetch Categories
-    */
+    // 1) Fetch Categories
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 setLoading(true);
                 setError("");
                 const catRes = await axios.get<Category[]>(`${BASE_URL}/api/categories`);
-                // Optionally sort categories by name
                 const sorted = catRes.data.sort((a, b) => a.name.localeCompare(b.name));
                 setCategories(sorted);
             } catch (err) {
@@ -293,9 +283,7 @@ export default function HomePage() {
         fetchCategories();
     }, []);
 
-    /*
-      2) Fetch / Search Services
-    */
+    // 2) Fetch / Search Services
     useEffect(() => {
         const fetchServices = async () => {
             try {
@@ -320,12 +308,17 @@ export default function HomePage() {
     }, [searchTerm, selectedCategoryId]);
 
     return (
-        <main className="w-full font-sans bg-white p-0 m-0">
-            {/* 1) Hero Single Image (fills mobile from top to search) */}
+        <main
+            className="
+        w-full font-sans bg-white p-0 m-0
+        pb-[80px] /* Enough bottom padding for BottomNav */
+      "
+        >
+            {/* 1) Hero Single Image */}
             <HeroImage />
 
-            {/* 2) Slight margin below hero before Search */}
-            <div className="px-4 mt-2">
+            {/* 2) Search Bar Section */}
+            <div className="px-4 mt-6">
                 <label
                     htmlFor="serviceSearch"
                     className="block mb-2 text-sm sm:text-base font-semibold text-gray-700"
@@ -338,7 +331,15 @@ export default function HomePage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Жишээ: 'үс', 'сахал'..."
-                    className="w-full rounded border border-gray-300 py-3 px-4 text-sm sm:text-base focus:outline-none focus:border-gray-700 transition-colors"
+                    className="
+            w-full
+            rounded
+            border border-gray-300
+            py-3 px-4
+            text-sm sm:text-base
+            focus:outline-none focus:border-gray-700
+            transition-colors
+          "
                 />
             </div>
 
@@ -352,7 +353,7 @@ export default function HomePage() {
 
             {/* 4) Error Messages (if any) */}
             {error && (
-                <p className="text-red-600 mb-8 text-center text-sm sm:text-base font-medium">
+                <p className="text-red-600 mb-6 px-4 text-center text-sm sm:text-base font-medium">
                     {error}
                 </p>
             )}
