@@ -262,7 +262,7 @@ export default function HomePage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
-    const BASE_URL = "http://localhost:5001";
+    const BASE_URL = "http://68.183.191.149";
 
     // 1) Fetch Categories
     useEffect(() => {
