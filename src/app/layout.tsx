@@ -14,7 +14,11 @@ export const metadata: Metadata = {
     description: "A next-generation scheduling and booking platform",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+                                       children,
+                                   }: {
+    children: React.ReactNode;
+}) {
     return (
         <html lang="en">
         <body className={`min-h-screen bg-gray-50 ${inter.className}`}>

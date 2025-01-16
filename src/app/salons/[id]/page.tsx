@@ -10,8 +10,6 @@ import {
     XMarkIcon,
 } from "@heroicons/react/24/solid";
 import MonthCalendar, { MonthData, DayStatus } from "@/app/components/MonthCalendar";
-import SidebarLeft from "../../components/SidebarLeft";
-import SidebarRight from "../../components/SidebarRight";
 
 interface HoursOfOperation {
     [day: string]: string;
@@ -89,7 +87,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         setMessage("");
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
         axios
-            .get<{ times: string[] }[]>(`http://152.42.243.146/api/services/${service._id}/availability`, {
+            .get<{ times: string[] }[]>(`http://68.183.191.149/api/services/${service._id}/availability`, {
                 params: { date: dateStr },
             })
             .then((res) => {
@@ -119,7 +117,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         try {
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
             const apptRes = await axios.post(
-                "http://152.42.243.146/api/appointments",
+                "http://68.183.191.149/api/appointments",
                 {
                     serviceId: service._id,
                     date: dateStr,
@@ -134,7 +132,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                     success?: boolean;
                     invoiceData?: { invoice_id?: string };
                     qrDataUrl?: string;
-                }>("http://152.42.243.146/api/payments/create-invoice", {
+                }>("http://68.183.191.149/api/payments/create-invoice", {
                     invoiceCode: "FORU_INVOICE",
                     amount: service.price,
                 });
@@ -173,7 +171,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                         payment_status?: string;
                     }>;
                 };
-            }>("http://152.42.243.146/api/payments/check-invoice", {
+            }>("http://68.183.191.149/api/payments/check-invoice", {
                 invoiceId,
             });
             const payRow = checkRes.data.checkResult?.rows?.[0];
@@ -317,12 +315,12 @@ export default function SalonDetailPage() {
         (async () => {
             try {
                 const salonRes = await axios.get<Salon>(
-                    `http://152.42.243.146/api/salons/${params.id}`
+                    `http://68.183.191.149/api/salons/${params.id}`
                 );
                 setSalon(salonRes.data);
 
                 const servicesRes = await axios.get<Service[]>(
-                    `http://152.42.243.146/api/services/salon/${params.id}`
+                    `http://68.183.191.149/api/services/salon/${params.id}`
                 );
                 setServices(servicesRes.data);
             } catch (err) {
@@ -362,11 +360,9 @@ export default function SalonDetailPage() {
     if (error) {
         return (
             <div className="flex min-h-screen bg-white">
-                <SidebarLeft />
                 <div className="flex-1 mx-auto max-w-5xl p-4">
                     <p className="text-red-600">{error}</p>
                 </div>
-                <SidebarRight />
             </div>
         );
     }
@@ -374,11 +370,9 @@ export default function SalonDetailPage() {
     if (!salon) {
         return (
             <div className="flex min-h-screen bg-white">
-                <SidebarLeft />
                 <div className="flex-1 mx-auto max-w-5xl p-4 text-center text-gray-600">
                     Салон ачаалж байна...
                 </div>
-                <SidebarRight />
             </div>
         );
     }
@@ -390,7 +384,6 @@ export default function SalonDetailPage() {
 
     return (
         <div className="flex min-h-screen bg-white">
-            <SidebarLeft />
             <main className="flex-1 mx-auto max-w-5xl px-4 sm:px-6 py-6">
                 {salon.coverImage && (
                     <div className="h-60 bg-gray-200 overflow-hidden mb-6 rounded-md">
@@ -481,7 +474,6 @@ export default function SalonDetailPage() {
                     </a>
                 </div>
             </main>
-            <SidebarRight />
             {showPopup && selectedService && (
                 <BookingPopup service={selectedService} onClose={closePopup} />
             )}
