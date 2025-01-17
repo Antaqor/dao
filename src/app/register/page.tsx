@@ -59,6 +59,7 @@ export default function UserRegisterPage() {
             >
                 {error && <p className="text-red-500 text-center font-medium">{error}</p>}
 
+                {/* Username */}
                 <div className="flex flex-col">
                     <label
                         htmlFor="username"
@@ -76,7 +77,60 @@ export default function UserRegisterPage() {
                     />
                 </div>
 
-                {/* More fields... */}
+                {/* Phone Number */}
+                <div className="flex flex-col">
+                    <label
+                        htmlFor="phoneNumber"
+                        className="text-sm font-medium text-gray-700 mb-2"
+                    >
+                        Утасны дугаар
+                    </label>
+                    <input
+                        id="phoneNumber"
+                        type="tel"
+                        className="rounded-lg bg-gray-100 border-0 p-3"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        required
+                    />
+                </div>
+
+                {/* Email */}
+                <div className="flex flex-col">
+                    <label
+                        htmlFor="email"
+                        className="text-sm font-medium text-gray-700 mb-2"
+                    >
+                        И-мэйл
+                    </label>
+                    <input
+                        id="email"
+                        type="email"
+                        className="rounded-lg bg-gray-100 border-0 p-3"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                </div>
+
+                {/* Password */}
+                <div className="flex flex-col">
+                    <label
+                        htmlFor="password"
+                        className="text-sm font-medium text-gray-700 mb-2"
+                    >
+                        Нууц үг
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        className="rounded-lg bg-gray-100 border-0 p-3"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                </div>
+
                 <button
                     type="submit"
                     className="bg-neutral-900 text-white text-sm font-medium py-3 rounded-lg hover:bg-neutral-700 transition-colors"
