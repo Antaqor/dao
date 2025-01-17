@@ -89,7 +89,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
         axios
             .get<{ times: string[] }[]>(
-                `http://localhost:5001/api/services/${service._id}/availability`,
+                `http://68.183.191.149/api/services/${service._id}/availability`,
                 { params: { date: dateStr } }
             )
             .then((res) => {
@@ -123,7 +123,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
             // a) Book appointment
             const apptRes = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "http://68.183.191.149/api/appointments",
                 {
                     serviceId: service._id,
                     date: dateStr,
@@ -141,7 +141,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                     success?: boolean;
                     invoiceData?: { invoice_id?: string };
                     qrDataUrl?: string;
-                }>("http://localhost:5001/api/payments/create-invoice", {
+                }>("http://68.183.191.149/api/payments/create-invoice", {
                     invoiceCode: "FORU_INVOICE",
                     amount: service.price,
                 });
@@ -180,7 +180,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     /** c) Call your server route to schedule a push reminder (30 min before) */
     async function handleScheduleReminder(appointmentDate: Date) {
         try {
-            await axios.post("http://localhost:5001/api/notifications/schedule", {
+            await axios.post("http://68.183.191.149/api/notifications/schedule", {
                 appointmentDate, // pass ISO or any relevant data
             });
             console.log("Scheduled push reminder successfully!");
@@ -203,7 +203,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         try {
             const checkRes = await axios.post<{
                 checkResult?: { rows?: Array<{ payment_status?: string }> };
-            }>("http://localhost:5001/api/payments/check-invoice", { invoiceId });
+            }>("http://68.183.191.149/api/payments/check-invoice", { invoiceId });
 
             const payRow = checkRes.data.checkResult?.rows?.[0];
             const payStatus = payRow?.payment_status || "UNPAID";
@@ -358,12 +358,12 @@ export default function SalonDetailPage() {
         (async () => {
             try {
                 const salonRes = await axios.get<Salon>(
-                    `http://localhost:5001/api/salons/${params.id}`
+                    `http://68.183.191.149/api/salons/${params.id}`
                 );
                 setSalon(salonRes.data);
 
                 const servicesRes = await axios.get<Service[]>(
-                    `http://localhost:5001/api/services/salon/${params.id}`
+                    `http://68.183.191.149/api/services/salon/${params.id}`
                 );
                 setServices(servicesRes.data);
             } catch (err) {

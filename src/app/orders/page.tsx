@@ -67,7 +67,7 @@ export default function ClientAppointmentsPage() {
 
                 // The backend logic: if role="user", returns only that user’s appointments
                 const res = await axios.get<AppointmentData[]>(
-                    "http://localhost:5001/api/appointments",
+                    "http://68.183.191.149/api/appointments",
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }

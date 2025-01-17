@@ -25,7 +25,7 @@ export default function UserRegisterPage() {
         setError("");
         try {
             const response = await axios.post<RegisterResponse>(
-                "http://localhost:5001/api/auth/register",
+                "http://68.183.191.149/api/auth/register",
                 {
                     username,
                     phoneNumber,
