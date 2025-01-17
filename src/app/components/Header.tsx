@@ -8,7 +8,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function Header() {
     const router = useRouter();
-    const { user, loggedIn, logout } = useAuth();
+    const { loggedIn, logout } = useAuth();
 
     const handleLogin = () => {
         router.push("/login");

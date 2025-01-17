@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
     HomeIcon,
     ClockIcon,
-    BriefcaseIcon,
     UserCircleIcon,
 } from "@heroicons/react/24/outline";
 
