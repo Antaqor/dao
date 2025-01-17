@@ -37,14 +37,14 @@ export default function Header() {
                             onClick={handleLogout}
                             className="bg-neutral-800 text-white px-3 py-2 rounded text-sm hover:bg-neutral-700 transition"
                         >
-                            Logout
+                            Гарах
                         </button>
                     ) : (
                         <button
                             onClick={handleLogin}
                             className="bg-neutral-800 text-white px-3 py-2 rounded text-sm hover:bg-neutral-700 transition"
                         >
-                            Login
+                            Нэвтрэх
                         </button>
                     )}
                 </div>

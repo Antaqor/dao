@@ -142,7 +142,7 @@ function CategoriesCarousel({
                                 className={`
                   w-full h-14 flex items-center justify-center px-4 py-2 
                   rounded-md border font-medium transition-colors
-                  text-sm sm:text-base
+                  text-sm sm:text-sm
                   ${
                                     isSelected
                                         ? "bg-gray-900 text-white border-gray-900"
@@ -150,7 +150,7 @@ function CategoriesCarousel({
                                 }
                 `}
                             >
-                                {Icon && <Icon className="mr-1 text-base" />}
+                                {Icon && <Icon className="mr-1 text-sm" />}
                                 <span>{cat.name}</span>
                             </button>
                         </SwiperSlide>
@@ -190,7 +190,7 @@ function AllServicesCarousel({
     if (!loading && !error && services.length > 0) {
         return (
             <section className="px-4 mb-6">
-                <h2 className="text-xl sm:text-2xl font-semibold mb-4">Бүх үйлчилгээ</h2>
+                <h2 className="text-sm sm:text-sm font-semibold mb-4">Бүх үйлчилгээ</h2>
                 <Swiper
                     modules={[Mousewheel]}
                     slidesPerView={1.2}
@@ -321,7 +321,7 @@ export default function HomePage() {
             <div className="px-4 mt-6">
                 <label
                     htmlFor="serviceSearch"
-                    className="block mb-2 text-sm sm:text-base font-semibold text-gray-700"
+                    className="block mb-2 text-m sm:text-sm font-semibold text-gray-700"
                 >
                     Хайлт
                 </label>

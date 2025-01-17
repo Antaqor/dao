@@ -1,5 +1,3 @@
-// File: /app/login/page.tsx
-
 "use client";
 import React, { useState } from "react";
 import axios from "axios";
@@ -19,48 +17,53 @@ export default function LoginPage() {
         setError("");
 
         try {
-            // Call your Express backend
+            // Express сервер рүү хүсэлт илгээнэ
             const res = await axios.post("http://68.183.191.149/api/auth/login", {
                 username,
                 password,
             });
 
-            // If success, store both user & token in context
+            // Хэрэв амжилттай бол хэрэглэгч болон токенийг context-д хадгална
             if (res.status === 200 && res.data.token) {
-                // Embedding the token into the user object:
+                // Token-ийг хэрэглэгчийн объектод нэмэх
                 const newUser = { ...res.data.user, accessToken: res.data.token };
 
-                // Now pass user + token to context login()
+                // Context–ийн login() функцэд newUser, токенийг дамжуулах
                 login(newUser, res.data.token);
 
-                // Then navigate somewhere, e.g. home
+                // Эцэст нь / (home) руу чиглүүлэх
                 router.push("/");
             }
         } catch (err) {
-            console.error("Login error:", err);
-            setError("Invalid credentials or server error.");
+            console.error("Нэвтрэх явцад алдаа гарлаа:", err);
+            setError("Нэвтрэх нэр эсвэл нууц үг буруу, эсвэл серверт алдаа гарлаа.");
         }
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-100 px-4">
-            <h1 className="text-3xl font-semibold mb-8 text-center tracking-wide">
-                Login
-            </h1>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
             <form
                 onSubmit={handleSubmit}
-                className="w-full max-w-md bg-white rounded-lg shadow-md p-8 flex flex-col space-y-6"
+                className="w-full max-w-md bg-white rounded-md border font-medium p-8 flex flex-col space-y-6"
             >
-                {error && <p className="text-red-500 text-center font-medium">{error}</p>}
+                {error && (
+                    <p className="text-red-500 text-center font-medium">
+                        {error}
+                    </p>
+                )}
 
-                <div className="flex flex-col">
-                    <label htmlFor="username" className="text-sm font-medium text-gray-700 mb-2">
-                        Username
+                {/* Нэвтрэх нэр */}
+                <div className="flex flex-col space-y-2">
+                    <label
+                        htmlFor="username"
+                        className="text-sm font-medium text-gray-700"
+                    >
+                        Нэвтрэх нэр
                     </label>
                     <input
                         id="username"
                         type="text"
-                        placeholder="Enter your username"
+                        placeholder="Нэвтрэх нэрээ оруулна уу"
                         className="rounded-lg bg-gray-100 border-0 p-3"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -68,14 +71,18 @@ export default function LoginPage() {
                     />
                 </div>
 
-                <div className="flex flex-col">
-                    <label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2">
-                        Password
+                {/* Нууц үг */}
+                <div className="flex flex-col space-y-2">
+                    <label
+                        htmlFor="password"
+                        className="text-sm font-medium text-gray-700"
+                    >
+                        Нууц үг
                     </label>
                     <input
                         id="password"
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder="Нууц үгээ оруулна уу"
                         className="rounded-lg bg-gray-100 border-0 p-3"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -83,11 +90,29 @@ export default function LoginPage() {
                     />
                 </div>
 
+                {/* Нэвтрэх товч */}
                 <button
                     type="submit"
-                    className="bg-neutral-900 text-white text-sm font-medium py-3 rounded-lg hover:bg-neutral-700 transition-colors"
+                    className="w-full bg-neutral-900 text-white text-sm font-medium py-3 rounded-lg hover:bg-neutral-700 transition-colors"
                 >
-                    Sign In
+                    Нэвтрэх
+                </button>
+
+                {/* 'эсвэл' гэсэн текстэнд тусгай дүрс эсвэл шугам нэмж болно */}
+                <div className="relative flex items-center justify-center">
+                    <div className="w-full h-px bg-gray-300"></div>
+                    <span className="absolute bg-white px-4 text-gray-500">
+                        эсвэл
+                    </span>
+                </div>
+
+                {/* Бүртгүүлэх товч */}
+                <button
+                    type="button"
+                    onClick={() => router.push("/register")}
+                    className="w-full bg-gray-200 text-neutral-900 text-sm font-medium py-3 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                    Бүртгүүлэх
                 </button>
             </form>
         </div>
