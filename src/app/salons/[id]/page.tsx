@@ -50,9 +50,9 @@ interface BookingPopupProps {
     onClose: () => void;
 }
 
-/** The Booking Popup component */
+/** Захиалгын Popup компонент */
 function BookingPopup({ service, onClose }: BookingPopupProps) {
-    const { user } = useAuth(); // read from context => user?.accessToken
+    const { user } = useAuth(); // context-оос хэрэглэгчийн мэдээлэл (user?.accessToken)
     const [monthData, setMonthData] = useState<MonthData | null>(null);
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
     const [times, setTimes] = useState<string[]>([]);
@@ -62,13 +62,13 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     const [message, setMessage] = useState("");
     const [done, setDone] = useState(false);
 
-    // Payment / QPay states
+    // Төлбөр / QPay-тэй холбоотой төлөвүүд
     const [invoiceId, setInvoiceId] = useState("");
     const [qrUrl, setQrUrl] = useState("");
     const [paymentDone, setPaymentDone] = useState(false);
     const [checkingPayment, setCheckingPayment] = useState(false);
 
-    // 1) Load a sample calendar (January data)
+    // 1) Туршилтын хуанли (1-р сарын өгөгдөл) ачаалах
     useEffect(() => {
         const januaryDays: DayStatus[] = [
             { day: 6, status: "goingFast" },
@@ -77,7 +77,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         setMonthData({ year: 2025, month: 0, days: januaryDays });
     }, []);
 
-    // 2) Fetch timeslots whenever user picks a day
+    // 2) Өдөр сонгоход тухайн өдрийн боломжит цагуудыг авах
     useEffect(() => {
         if (!selectedDay) {
             setTimes([]);
@@ -103,7 +103,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     }, [selectedDay, service._id]);
 
     /**
-     * 3) Book appointment => generate QPay invoice => schedule push reminder
+     * 3) Цаг захиалах -> QPay нэхэмжлэл үүсгэх -> push мэдэгдэл төлөвлөх
      */
     async function handleBookTime() {
         if (!user) {
@@ -121,7 +121,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
 
         try {
             const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
-            // a) Book appointment
+            // a) Цаг захиалга үүсгэх
             const apptRes = await axios.post(
                 "http://68.183.191.149/api/appointments",
                 {
@@ -136,7 +136,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             if (apptRes.status === 201) {
                 setMessage("Цаг амжилттай захиалагдлаа! Төлбөрийн нэхэмжлэл үүсгэж байна...");
 
-                // b) Generate QPay invoice
+                // b) QPay-н нэхэмжлэл үүсгэх
                 const invoiceRes = await axios.post<{
                     success?: boolean;
                     invoiceData?: { invoice_id?: string };
@@ -150,14 +150,14 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                     const inv = invoiceRes.data.invoiceData;
                     setInvoiceId(inv?.invoice_id || "");
                     setQrUrl(invoiceRes.data.qrDataUrl || "");
-                    setMessage("Төлбөрийн нэхэмжлэл үүссэн. QR-ээр эсвэл Social Pay-р төлнө үү.");
+                    setMessage("Төлбөрийн нэхэмжлэл үүссэн. Та QR-ээр эсвэл Social Pay-ээр төлнө үү.");
                 } else {
-                    setMessage("QPay Invoice үүсгэхэд алдаа гарлаа.");
+                    setMessage("QPay нэхэмжлэл үүсгэхэд алдаа гарлаа.");
                 }
 
-                // c) Optionally schedule push reminder (e.g., 30 min prior)
+                // c) Push мэдэгдэл (30 минутын өмнө) төлөвлөх
                 const year = 2025;
-                const month = 0; // January
+                const month = 0; // 1-р сар
                 const dayNum = selectedDay;
                 const [hh, mm] = selectedTime.split(":").map(Number);
                 const appointmentDate = new Date(year, month, dayNum, hh, mm);
@@ -177,20 +177,20 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
     }
 
-    /** c) Call your server route to schedule a push reminder (30 min before) */
+    /** c) Сервер талд push мэдэгдэл төлөвлөх хүсэлт илгээх (30 мин өмнө) */
     async function handleScheduleReminder(appointmentDate: Date) {
         try {
             await axios.post("http://68.183.191.149/api/notifications/schedule", {
-                appointmentDate, // pass ISO or any relevant data
+                appointmentDate, // ISO форматаар эсвэл шаардлагатай мэдээллээ дамжуулна
             });
-            console.log("Scheduled push reminder successfully!");
+            console.log("Push мэдэгдлийг амжилттай төлөвлөлөө!");
         } catch (err) {
-            console.error("Error scheduling push reminder:", err);
+            console.error("Push мэдэгдэл төлөвлөх үед алдаа гарлаа:", err);
         }
     }
 
     /**
-     * 4) Check Payment Status
+     * 4) Төлбөрийн төлөв шалгах
      */
     async function handleCheckPayment() {
         if (!invoiceId) {
@@ -221,7 +221,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
     }
 
-    // Return the popup UI
+    // Popup UI-г буцааж рэндэрлэх
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
@@ -232,19 +232,20 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                 <button
                     onClick={onClose}
                     className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
-                    aria-label="Close booking popup"
+                    aria-label="Захиалгын цонхыг хаах"
                 >
                     <XMarkIcon className="w-6 h-6" />
                 </button>
 
-                {/* If not done => show booking flow. If done => show final screen */}
+                {/* Хэрэв done = false => цаг захиалах явц */}
+                {/* Хэрэв done = true => Төлбөрийн дэлгэц */}
                 {!done ? (
                     <>
                         <h2 className="text-2xl font-bold text-neutral-900 mb-4">
                             {service.name}
                             <span className="ml-2 text-base text-primary font-medium">
-                {service.price.toLocaleString()}₮
-              </span>
+                                {service.price.toLocaleString()}₮
+                            </span>
                         </h2>
 
                         {monthData && (
@@ -296,7 +297,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                         </div>
                     </>
                 ) : (
-                    // "Done" UI => Payment + final message
+                    // Захиалга дууссан тохиолдолд => төлбөр шалгах, эцсийн мэдээлэл
                     <div className="text-center px-4 py-6">
                         {paymentDone ? (
                             <h2 className="text-xl font-bold text-green-600 mb-3">
@@ -313,7 +314,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                         {qrUrl && !paymentDone && (
                             <img
                                 src={qrUrl}
-                                alt="QR Code"
+                                alt="Төлбөрийн QR"
                                 className="mx-auto mb-4"
                                 style={{ width: 200, height: 200 }}
                             />
@@ -340,7 +341,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     );
 }
 
-/** The main SalonDetailPage: same as before, with a booking popup. */
+/** Үндсэн SalonDetailPage компонент */
 export default function SalonDetailPage() {
     const params = useParams() as { id?: string };
     const [salon, setSalon] = useState<Salon | null>(null);
@@ -352,7 +353,7 @@ export default function SalonDetailPage() {
     const phoneNumber = "+97694641031";
     const shareUrl = `http://localhost:3000/salons/${params.id}`;
 
-    // 1) Fetch the salon & its services
+    // 1) Салоны мэдээлэл болон үйлчилгээг нь татах
     useEffect(() => {
         if (!params.id) return;
         (async () => {
@@ -367,13 +368,13 @@ export default function SalonDetailPage() {
                 );
                 setServices(servicesRes.data);
             } catch (err) {
-                console.error("Error loading salon/services:", err);
+                console.error("Салон болон үйлчилгээ уншихад алдаа гарлаа:", err);
                 setError("Салон болон үйлчилгээ уншихад алдаа гарлаа.");
             }
         })();
     }, [params.id]);
 
-    // 2) Share logic (unchanged)
+    // 2) Хуваалцах логик
     const handleShare = async () => {
         try {
             if (navigator.share) {
@@ -391,7 +392,7 @@ export default function SalonDetailPage() {
         }
     };
 
-    // 3) Open/close the booking popup
+    // 3) Захиалгын popup нээх/хаах
     function openPopup(svc: Service) {
         setSelectedService(svc);
         setShowPopup(true);
@@ -401,7 +402,7 @@ export default function SalonDetailPage() {
         setSelectedService(null);
     }
 
-    // 4) Error / loading states
+    // 4) Алдааны байдал эсвэл ачаалж буй байдал
     if (error) {
         return (
             <div className="flex min-h-screen bg-white">
@@ -421,28 +422,28 @@ export default function SalonDetailPage() {
         );
     }
 
-    // 5) Map link for location
+    // 5) Байршлын Google Map линк
     const googleMapsLink =
         salon.lat != null && salon.lng != null
             ? `https://maps.google.com/?q=${salon.lat},${salon.lng}`
             : `https://maps.google.com/?q=${encodeURIComponent(salon.location)}`;
 
-    // Render
+    // Экран руу рэндэрлэх хэсэг
     return (
         <div className="flex min-h-screen bg-white">
             <main className="flex-1 mx-auto max-w-5xl px-4 sm:px-6 py-6">
-                {/* Cover image */}
+                {/* Хавтасны зураг */}
                 {salon.coverImage && (
                     <div className="h-60 bg-gray-200 overflow-hidden mb-6 rounded-md">
                         <img
                             src={salon.coverImage}
-                            alt="Cover"
+                            alt="Хавтасны зураг"
                             className="w-full h-full object-cover"
                         />
                     </div>
                 )}
 
-                {/* Salon info & share button */}
+                {/* Салоны үндсэн мэдээлэл ба Хуваалцах товч */}
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between mb-4">
                     <div className="flex items-start gap-3">
                         <div className="h-20 w-20 bg-white rounded-full overflow-hidden border border-gray-300">
@@ -473,19 +474,19 @@ export default function SalonDetailPage() {
                             className="inline-flex items-center bg-neutral-900 text-white px-3 py-1.5 rounded-md hover:bg-neutral-700 transition-colors"
                         >
                             <PhoneIcon className="h-5 w-5 mr-2" />
-                            Call
+                            Залгах
                         </a>
                         <button
                             onClick={handleShare}
                             className="inline-flex items-center text-gray-600 hover:text-gray-800 transition-colors focus:outline-none"
                         >
                             <ShareIcon className="h-5 w-5 mr-1" />
-                            Share
+                            Хуваалцах
                         </button>
                     </div>
                 </div>
 
-                {/* List of services */}
+                {/* Үйлчилгээний жагсаалт */}
                 {services.length === 0 ? (
                     <p className="text-sm text-gray-500">Үйлчилгээ олдсонгүй.</p>
                 ) : (
@@ -512,7 +513,7 @@ export default function SalonDetailPage() {
                     </ul>
                 )}
 
-                {/* Map link */}
+                {/* Газрын зураг руу үсрэх линк */}
                 <div className="mt-4">
                     <a
                         href={googleMapsLink}
@@ -520,12 +521,12 @@ export default function SalonDetailPage() {
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline"
                     >
-                        View on Map
+                        Газрын зураг дээр харах
                     </a>
                 </div>
             </main>
 
-            {/* The booking popup */}
+            {/* Захиалга хийх popup */}
             {showPopup && selectedService && (
                 <BookingPopup service={selectedService} onClose={closePopup} />
             )}
