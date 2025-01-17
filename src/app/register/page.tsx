@@ -58,7 +58,7 @@ export default function UserRegisterPage() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
             <form
                 onSubmit={handleSubmit}
-                className="w-full max-w-md bg-white rounded-lg shadow-md p-8 flex flex-col space-y-6"
+                className="w-full max-w-md bg-white rounded-t-md shadow-md p-8 flex flex-col space-y-6"
             >
                 {error && (
                     <p className="text-red-500 text-center font-medium">

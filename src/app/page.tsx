@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { IconType } from "react-icons";
-import { FaCut, FaSpa, FaBroom, FaUserNinja } from "react-icons/fa";
+// 1) Removed import { IconType } from "react-icons";
+// 2) Removed import { FaCut, FaSpa, FaBroom, FaUserNinja } from "react-icons/fa";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel } from "swiper/modules";
 import "swiper/css";
@@ -33,14 +33,6 @@ interface SearchParams {
     categoryId?: string;
 }
 
-/* === Icons for Categories === */
-const categoryIcons: Record<string, IconType> = {
-    Hair: FaCut,
-    Barber: FaUserNinja,
-    Nail: FaSpa,
-    Beauty: FaBroom,
-};
-
 /* -------------------------------------------
    1) Skeleton/Loading Components
 ------------------------------------------- */
@@ -48,7 +40,10 @@ function CategorySkeletonRow() {
     return (
         <div className="flex flex-wrap justify-center gap-4 mb-6">
             {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="w-20 h-8 bg-gray-200 rounded-full animate-pulse" />
+                <div
+                    key={i}
+                    className="w-20 h-8 bg-gray-200 rounded-full animate-pulse"
+                />
             ))}
         </div>
     );
@@ -133,12 +128,13 @@ function CategoriesCarousel({
             >
                 {categories.map((cat) => {
                     const isSelected = selectedCategoryId === cat._id;
-                    const Icon = categoryIcons[cat.name] || null;
 
                     return (
                         <SwiperSlide key={cat._id}>
                             <button
-                                onClick={() => setSelectedCategoryId(isSelected ? null : cat._id)}
+                                onClick={() =>
+                                    setSelectedCategoryId(isSelected ? null : cat._id)
+                                }
                                 className={`
                   w-full h-14 flex items-center justify-center px-4 py-2 
                   rounded-md border font-medium transition-colors
@@ -150,7 +146,7 @@ function CategoriesCarousel({
                                 }
                 `}
                             >
-                                {Icon && <Icon className="mr-1 text-sm" />}
+                                {/* 4) Eliminated the icon — simply display the category name */}
                                 <span>{cat.name}</span>
                             </button>
                         </SwiperSlide>

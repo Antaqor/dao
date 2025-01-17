@@ -15,7 +15,7 @@ const BottomNav: React.FC = () => {
 
     return (
         <nav
-            className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 z-50 shadow-sm"
+            className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 shadow-sm"
         >
             <div className="flex justify-around items-center py-3 sm:py-4">
                 {/* HOME */}
