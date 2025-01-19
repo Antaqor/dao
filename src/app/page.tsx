@@ -1,14 +1,15 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-// 1) Removed import { IconType } from "react-icons";
-// 2) Removed import { FaCut, FaSpa, FaBroom, FaUserNinja } from "react-icons/fa";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Mousewheel } from "swiper/modules";
 import "swiper/css";
 
-/* === Interfaces === */
+/* -------------------------------------------
+   1) Interfaces
+------------------------------------------- */
 interface Category {
     _id: string;
     name: string;
@@ -28,13 +29,21 @@ interface Service {
     averageRating?: number;
     reviewCount?: number;
 }
+interface Salon {
+    _id: string;
+    name: string;
+    location: string;
+    logo?: string;
+    coverImage?: string;
+    categoryName?: string;
+}
 interface SearchParams {
     term?: string;
     categoryId?: string;
 }
 
 /* -------------------------------------------
-   1) Skeleton/Loading Components
+   2) Skeleton / Loading
 ------------------------------------------- */
 function CategorySkeletonRow() {
     return (
@@ -67,7 +76,7 @@ function ServiceSkeletonGrid() {
 }
 
 /* -------------------------------------------
-   2) Hero Section
+   3) Hero Section
 ------------------------------------------- */
 function HeroImage() {
     return (
@@ -82,7 +91,7 @@ function HeroImage() {
 }
 
 /* -------------------------------------------
-   3) Categories Carousel
+   4) Categories Carousel
 ------------------------------------------- */
 interface CategoriesCarouselProps {
     categories: Category[];
@@ -128,7 +137,6 @@ function CategoriesCarousel({
             >
                 {categories.map((cat) => {
                     const isSelected = selectedCategoryId === cat._id;
-
                     return (
                         <SwiperSlide key={cat._id}>
                             <button
@@ -146,7 +154,6 @@ function CategoriesCarousel({
                                 }
                 `}
                             >
-                                {/* 4) Eliminated the icon — simply display the category name */}
                                 <span>{cat.name}</span>
                             </button>
                         </SwiperSlide>
@@ -158,7 +165,7 @@ function CategoriesCarousel({
 }
 
 /* -------------------------------------------
-   4) All Services Carousel
+   5) All Services Carousel
 ------------------------------------------- */
 interface AllServicesCarouselProps {
     services: Service[];
@@ -205,7 +212,6 @@ function AllServicesCarousel({
                     {services.map((svc) => {
                         const salonId = svc.salon?._id;
                         const targetHref = salonId ? `/salons/${salonId}` : "#";
-
                         return (
                             <SwiperSlide key={svc._id}>
                                 <Link
@@ -246,9 +252,17 @@ function AllServicesCarousel({
 }
 
 /* -------------------------------------------
-   5) Main HomePage Component
+   6) Import and Use AllSalonsCarousel
 ------------------------------------------- */
+import AllSalonsCarousel from "../app/components/AllSalonsCarousel";
+
+/* -------------------------------------------
+   7) HomePage Component
+------------------------------------------- */
+const BASE_URL = "http://localhost:5001";
+
 export default function HomePage() {
+    // States for categories/services
     const [categories, setCategories] = useState<Category[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
@@ -258,7 +272,10 @@ export default function HomePage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
-    const BASE_URL = "http://68.183.191.149";
+    // States for salons
+    const [salons, setSalons] = useState<Salon[]>([]);
+    const [salonsLoading, setSalonsLoading] = useState(true);
+    const [salonsError, setSalonsError] = useState("");
 
     // 1) Fetch Categories
     useEffect(() => {
@@ -285,6 +302,7 @@ export default function HomePage() {
             try {
                 setLoading(true);
                 setError("");
+
                 const params: SearchParams = {};
                 if (searchTerm) params.term = searchTerm;
                 if (selectedCategoryId) params.categoryId = selectedCategoryId;
@@ -303,6 +321,24 @@ export default function HomePage() {
         fetchServices();
     }, [searchTerm, selectedCategoryId]);
 
+    // 3) Fetch Salons (For the "AllSalonsCarousel")
+    useEffect(() => {
+        const fetchSalons = async () => {
+            try {
+                setSalonsLoading(true);
+                setSalonsError("");
+                const res = await axios.get<Salon[]>(`${BASE_URL}/api/salons`);
+                setSalons(res.data);
+            } catch (err) {
+                console.error("Error fetching salons:", err);
+                setSalonsError("Салоны мэдээлэл ачаалж чадсангүй.");
+            } finally {
+                setSalonsLoading(false);
+            }
+        };
+        fetchSalons();
+    }, []);
+
     return (
         <main
             className="
@@ -310,10 +346,10 @@ export default function HomePage() {
         pb-[80px] /* Enough bottom padding for BottomNav */
       "
         >
-            {/* 1) Hero Single Image */}
+            {/* Hero Image */}
             <HeroImage />
 
-            {/* 2) Search Bar Section */}
+            {/* Search Bar Section */}
             <div className="px-4 mt-6">
                 <label
                     htmlFor="serviceSearch"
@@ -339,7 +375,7 @@ export default function HomePage() {
                 />
             </div>
 
-            {/* 3) Categories Carousel */}
+            {/* Categories Carousel */}
             <CategoriesCarousel
                 categories={categories}
                 loading={loading}
@@ -347,15 +383,22 @@ export default function HomePage() {
                 setSelectedCategoryId={setSelectedCategoryId}
             />
 
-            {/* 4) Error Messages (if any) */}
+            {/* Error Messages for Services */}
             {error && (
                 <p className="text-red-600 mb-6 px-4 text-center text-sm sm:text-base font-medium">
                     {error}
                 </p>
             )}
 
-            {/* 5) All Services Carousel */}
+            {/* All Services Carousel */}
             <AllServicesCarousel services={services} loading={loading} error={error} />
+
+            {/* All Salons Carousel */}
+            <AllSalonsCarousel
+                salons={salons}
+                loading={salonsLoading}
+                error={salonsError}
+            />
         </main>
     );
 }

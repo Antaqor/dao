@@ -32,7 +32,7 @@ export default function UserProfilePage() {
         }
 
         axios
-            .get("http://68.183.191.149/api/auth/profile", {
+            .get("http://localhost:5001/api/auth/profile", {
                 headers: { Authorization: `Bearer ${token}` },
             })
             .then((res) => {

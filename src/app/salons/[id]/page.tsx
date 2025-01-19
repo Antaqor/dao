@@ -1,4 +1,4 @@
-"use client";
+"use client";  // <-- Next.js "use client" directive
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
@@ -12,10 +12,25 @@ import {
 import MonthCalendar, { MonthData, DayStatus } from "@/app/components/MonthCalendar";
 import { useAuth } from "@/app/context/AuthContext";
 
-/** Data models (same as your original code) */
+// --------------------
+// Utility: convert "HH:mm" => "H:MM AM/PM"
+// --------------------
+function format24to12(time24: string) {
+    const [h, m] = time24.split(":");
+    let hour = parseInt(h, 10);
+    const minute = parseInt(m, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12;
+    return `${hour}:${String(minute).padStart(2, "0")} ${ampm}`;
+}
+
+// --------------------
+// Type definitions
+// --------------------
 interface HoursOfOperation {
     [day: string]: string;
 }
+
 interface Salon {
     _id: string;
     name: string;
@@ -27,6 +42,7 @@ interface Salon {
     lat?: number | null;
     lng?: number | null;
 }
+
 interface Service {
     _id: string;
     name: string;
@@ -34,41 +50,37 @@ interface Service {
     durationMinutes: number;
 }
 
-/** Utility: format "HH:mm" => "H:MM AM/PM" */
-function format24to12(time24: string) {
-    const [h, m] = time24.split(":");
-    let hour = parseInt(h, 10);
-    const minute = parseInt(m, 10);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    hour = hour % 12 || 12;
-    return `${hour}:${String(minute).padStart(2, "0")} ${ampm}`;
-}
-
-/** Popup props */
 interface BookingPopupProps {
     service: Service;
     onClose: () => void;
 }
 
-/** Захиалгын Popup компонент */
+// --------------------
+// Booking Popup
+// --------------------
 function BookingPopup({ service, onClose }: BookingPopupProps) {
-    const { user } = useAuth(); // context-оос хэрэглэгчийн мэдээлэл (user?.accessToken)
+    const { user } = useAuth();  // user context with .accessToken, etc.
+
+    // Step-based UI states: "chooseTime" -> "showInvoice" -> "done"
+    const [step, setStep] = useState<"chooseTime" | "showInvoice" | "done">("chooseTime");
+    const [message, setMessage] = useState("");
+
+    // Calendar/time picking
     const [monthData, setMonthData] = useState<MonthData | null>(null);
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
     const [times, setTimes] = useState<string[]>([]);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
-
     const [loadingTimes, setLoadingTimes] = useState(false);
-    const [message, setMessage] = useState("");
-    const [done, setDone] = useState(false);
 
-    // Төлбөр / QPay-тэй холбоотой төлөвүүд
+    // QPay states
     const [invoiceId, setInvoiceId] = useState("");
     const [qrUrl, setQrUrl] = useState("");
     const [paymentDone, setPaymentDone] = useState(false);
     const [checkingPayment, setCheckingPayment] = useState(false);
 
-    // 1) Туршилтын хуанли (1-р сарын өгөгдөл) ачаалах
+    // --------------------
+    // 1) Load some test MonthCalendar data (e.g., January 2025)
+    // --------------------
     useEffect(() => {
         const januaryDays: DayStatus[] = [
             { day: 6, status: "goingFast" },
@@ -77,7 +89,9 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         setMonthData({ year: 2025, month: 0, days: januaryDays });
     }, []);
 
-    // 2) Өдөр сонгоход тухайн өдрийн боломжит цагуудыг авах
+    // --------------------
+    // 2) Fetch time slots when user picks a day
+    // --------------------
     useEffect(() => {
         if (!selectedDay) {
             setTimes([]);
@@ -87,9 +101,10 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         setMessage("");
 
         const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
+
         axios
             .get<{ times: string[] }[]>(
-                `http://68.183.191.149/api/services/${service._id}/availability`,
+                `http://localhost:5001/api/services/${service._id}/availability`,
                 { params: { date: dateStr } }
             )
             .then((res) => {
@@ -102,16 +117,12 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             .finally(() => setLoadingTimes(false));
     }, [selectedDay, service._id]);
 
-    /**
-     * 3) Цаг захиалах -> QPay нэхэмжлэл үүсгэх -> push мэдэгдэл төлөвлөх
-     */
-    async function handleBookTime() {
-        if (!user) {
+    // --------------------
+    // STEP A: Create invoice for 500₮ deposit
+    // --------------------
+    async function handleCreateInvoice() {
+        if (!user?.accessToken) {
             setMessage("Нэвтэрч орно уу (Token алга).");
-            return;
-        }
-        if (!user.accessToken) {
-            setMessage("Token алга байна. Дахин нэвтэрнэ үү.");
             return;
         }
         if (!selectedDay || !selectedTime) {
@@ -120,68 +131,130 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
 
         try {
-            const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
-            // a) Цаг захиалга үүсгэх
-            const apptRes = await axios.post(
-                "http://68.183.191.149/api/appointments",
+            setMessage("Төлбөрийн нэхэмжлэл үүсгэж байна...");
+
+            // Create QPay invoice for 500₮
+            const invoiceRes = await axios.post(
+                "http://localhost:5001/api/payments/create-invoice",
+                {
+                    invoiceCode: "FORU_INVOICE",
+                    amount: 50,
+                }
+            );
+
+            if (invoiceRes.data?.success) {
+                setInvoiceId(invoiceRes.data.invoiceData?.invoice_id || "");
+                setQrUrl(invoiceRes.data.qrDataUrl || "");
+
+                // Move to next step
+                setStep("showInvoice");
+                setMessage("Төлбөрийн нэхэмжлэл үүссэн. Та 50₮ төлнө үү.");
+            } else {
+                setMessage("QPay нэхэмжлэл үүсгэхэд алдаа гарлаа.");
+            }
+        } catch (err) {
+            setMessage("Нэхэмжлэл үүсгэх үед алдаа гарлаа.");
+            console.error(err);
+        }
+    }
+
+    // --------------------
+    // STEP B: Check if paid -> create appointment
+    // --------------------
+    async function handleCheckPayment() {
+        if (!invoiceId) {
+            setMessage("Invoice ID алга байна. Төлбөр шалгах боломжгүй.");
+            return;
+        }
+        setCheckingPayment(true);
+        setMessage("");
+
+        try {
+            const checkRes = await axios.post(
+                "http://localhost:5001/api/payments/check-invoice",
+                { invoiceId }
+            );
+
+            const payRow = checkRes.data?.checkResult?.rows?.[0];
+            const payStatus = payRow?.payment_status || "UNPAID";
+
+            if (payStatus === "PAID") {
+                setPaymentDone(true);
+
+                // Create the appointment now
+                await createAppointmentAfterPayment();
+                setStep("done");
+                setMessage("Төлбөр амжилттай! Цаг амжилттай захиалагдлаа.");
+            } else {
+                setMessage("Төлбөр хараахан төлөгдөөгүй байна.");
+            }
+        } catch (err) {
+            setMessage("Төлбөр шалгахад алдаа гарлаа.");
+            console.error(err);
+        } finally {
+            setCheckingPayment(false);
+        }
+    }
+
+    // --------------------
+    // Actually create the appointment (service.price - 500)
+    // --------------------
+    async function createAppointmentAfterPayment() {
+        if (!user?.accessToken) {
+            setMessage("Token алга байна.");
+            return;
+        }
+
+        // TypeScript guards:
+        if (selectedDay == null) {
+            setMessage("Өдөр сонгоогүй байна!");
+            return;
+        }
+        if (!selectedTime) {
+            setMessage("Цаг сонгоогүй байна!");
+            return;
+        }
+
+        const dateStr = `2025-01-${String(selectedDay).padStart(2, "0")}`;
+        const finalPrice = Math.max(0, service.price - 50);
+
+        try {
+            // Either consume the response or remove it
+            const { data } = await axios.post(
+                "http://localhost:5001/api/appointments",
                 {
                     serviceId: service._id,
                     date: dateStr,
                     startTime: selectedTime,
-                    status: "pendingPayment",
+                    status: "confirmed",
+                    price: finalPrice,
                 },
-                { headers: { Authorization: `Bearer ${user.accessToken}` } }
-            );
-
-            if (apptRes.status === 201) {
-                setMessage("Цаг амжилттай захиалагдлаа! Төлбөрийн нэхэмжлэл үүсгэж байна...");
-
-                // b) QPay-н нэхэмжлэл үүсгэх
-                const invoiceRes = await axios.post<{
-                    success?: boolean;
-                    invoiceData?: { invoice_id?: string };
-                    qrDataUrl?: string;
-                }>("http://68.183.191.149/api/payments/create-invoice", {
-                    invoiceCode: "FORU_INVOICE",
-                    amount: service.price,
-                });
-
-                if (invoiceRes.data?.success) {
-                    const inv = invoiceRes.data.invoiceData;
-                    setInvoiceId(inv?.invoice_id || "");
-                    setQrUrl(invoiceRes.data.qrDataUrl || "");
-                    setMessage("Төлбөрийн нэхэмжлэл үүссэн. Та QR-ээр эсвэл Social Pay-ээр төлнө үү.");
-                } else {
-                    setMessage("QPay нэхэмжлэл үүсгэхэд алдаа гарлаа.");
+                {
+                    headers: { Authorization: `Bearer ${user.accessToken}` },
                 }
+            );
+            console.log("Appointment created:", data);
 
-                // c) Push мэдэгдэл (30 минутын өмнө) төлөвлөх
-                const year = 2025;
-                const month = 0; // 1-р сар
-                const dayNum = selectedDay;
-                const [hh, mm] = selectedTime.split(":").map(Number);
-                const appointmentDate = new Date(year, month, dayNum, hh, mm);
-
-                await handleScheduleReminder(appointmentDate);
-
-                setDone(true);
-            } else {
-                setMessage("Захиалга үүсгэхэд алдаа гарлаа.");
-            }
+            // Schedule push notification (optional)
+            const year = 2025;
+            const month = 0; // January
+            const dayNum = selectedDay;
+            const [hh, mm] = selectedTime.split(":").map(Number);
+            const appointmentDate = new Date(year, month, dayNum, hh, mm);
+            await handleScheduleReminder(appointmentDate);
         } catch (err) {
-            if (axios.isAxiosError(err) && err.response?.status === 401) {
-                setMessage("Token буруу буюу хугацаа дууссан. Дахин нэвтэрнэ үү.");
-            } else {
-                setMessage("Серверийн алдаа эсвэл нэвтрэлт шаардлагатай.");
-            }
+            setMessage("Appointment үүсгэхэд алдаа гарлаа.");
+            console.error(err);
         }
     }
 
-    /** c) Сервер талд push мэдэгдэл төлөвлөх хүсэлт илгээх (30 мин өмнө) */
+    // --------------------
+    // Schedule push reminder (unchanged logic)
+    // --------------------
     async function handleScheduleReminder(appointmentDate: Date) {
         try {
-            await axios.post("http://68.183.191.149/api/notifications/schedule", {
-                appointmentDate, // ISO форматаар эсвэл шаардлагатай мэдээллээ дамжуулна
+            await axios.post("http://localhost:5001/api/notifications/schedule", {
+                appointmentDate,
             });
             console.log("Push мэдэгдлийг амжилттай төлөвлөлөө!");
         } catch (err) {
@@ -189,39 +262,9 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         }
     }
 
-    /**
-     * 4) Төлбөрийн төлөв шалгах
-     */
-    async function handleCheckPayment() {
-        if (!invoiceId) {
-            setMessage("Invoice ID алга байна. Төлбөр шалгах боломжгүй.");
-            return;
-        }
-        setMessage("");
-        setCheckingPayment(true);
-
-        try {
-            const checkRes = await axios.post<{
-                checkResult?: { rows?: Array<{ payment_status?: string }> };
-            }>("http://68.183.191.149/api/payments/check-invoice", { invoiceId });
-
-            const payRow = checkRes.data.checkResult?.rows?.[0];
-            const payStatus = payRow?.payment_status || "UNPAID";
-
-            if (payStatus === "PAID") {
-                setPaymentDone(true);
-                setMessage("Төлбөр амжилттай хийгдсэн!");
-            } else {
-                setMessage("Төлбөр хараахан төлөгдөөгүй байна.");
-            }
-        } catch {
-            setMessage("Төлбөр шалгахад алдаа гарлаа.");
-        } finally {
-            setCheckingPayment(false);
-        }
-    }
-
-    // Popup UI-г буцааж рэндэрлэх
+    // --------------------
+    // Render the Popup
+    // --------------------
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
@@ -229,23 +272,23 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
             aria-modal="true"
         >
             <div className="bg-white w-full max-w-md rounded-lg relative p-6 shadow-2xl">
+                {/* Close button */}
                 <button
                     onClick={onClose}
                     className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
-                    aria-label="Захиалгын цонхыг хаах"
+                    aria-label="Close booking popup"
                 >
                     <XMarkIcon className="w-6 h-6" />
                 </button>
 
-                {/* Хэрэв done = false => цаг захиалах явц */}
-                {/* Хэрэв done = true => Төлбөрийн дэлгэц */}
-                {!done ? (
+                {/* STEP 1: Choose day/time */}
+                {step === "chooseTime" && (
                     <>
                         <h2 className="text-2xl font-bold text-neutral-900 mb-4">
                             {service.name}
                             <span className="ml-2 text-base text-primary font-medium">
-                                {service.price.toLocaleString()}₮
-                            </span>
+                {service.price.toLocaleString()}₮ / deposit 50₮
+              </span>
                         </h2>
 
                         {monthData && (
@@ -259,11 +302,10 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                             <p className="mt-3 text-sm text-gray-500">Цаг ачаалж байна...</p>
                         )}
                         {message && (
-                            <p className="mt-3 text-sm text-red-600 font-medium">
-                                {message}
-                            </p>
+                            <p className="mt-3 text-sm text-red-600 font-medium">{message}</p>
                         )}
 
+                        {/* Time slots */}
                         {times.length > 0 && !loadingTimes && (
                             <div className="mt-4 grid grid-cols-3 gap-3">
                                 {times.map((t) => (
@@ -281,6 +323,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                                 ))}
                             </div>
                         )}
+
                         <div className="mt-6 flex justify-end gap-3">
                             <button
                                 onClick={onClose}
@@ -289,28 +332,21 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                                 Болих
                             </button>
                             <button
-                                onClick={handleBookTime}
+                                onClick={handleCreateInvoice}
                                 className="px-4 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-700"
                             >
-                                Цаг захиалах
+                                Төлбөр (50₮)
                             </button>
                         </div>
                     </>
-                ) : (
-                    // Захиалга дууссан тохиолдолд => төлбөр шалгах, эцсийн мэдээлэл
+                )}
+
+                {/* STEP 2: Show invoice + check payment */}
+                {step === "showInvoice" && (
                     <div className="text-center px-4 py-6">
-                        {paymentDone ? (
-                            <h2 className="text-xl font-bold text-green-600 mb-3">
-                                Төлбөр амжилттай!
-                            </h2>
-                        ) : (
-                            <h2 className="text-xl font-bold text-green-600 mb-3">
-                                Цаг амжилттай захиалагдлаа!
-                            </h2>
-                        )}
-                        {message && (
-                            <p className="text-sm text-gray-700 mb-4">{message}</p>
-                        )}
+                        <h2 className="text-xl font-bold text-gray-800 mb-3">50₮ төлнө үү</h2>
+                        {message && <p className="text-sm text-gray-700 mb-4">{message}</p>}
+
                         {qrUrl && !paymentDone && (
                             <img
                                 src={qrUrl}
@@ -319,6 +355,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                                 style={{ width: 200, height: 200 }}
                             />
                         )}
+
                         {!paymentDone && invoiceId && (
                             <button
                                 onClick={handleCheckPayment}
@@ -328,6 +365,21 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
                                 {checkingPayment ? "Шалгаж байна..." : "Төлбөр шалгах"}
                             </button>
                         )}
+
+                        <button
+                            onClick={onClose}
+                            className="mt-4 px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
+                        >
+                            Болих
+                        </button>
+                    </div>
+                )}
+
+                {/* STEP 3: Done */}
+                {step === "done" && (
+                    <div className="text-center px-4 py-6">
+                        <h2 className="text-xl font-bold text-green-600 mb-3">Амжилттай!</h2>
+                        {message && <p className="text-sm text-gray-700 mb-4">{message}</p>}
                         <button
                             onClick={onClose}
                             className="mt-4 px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
@@ -341,7 +393,9 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     );
 }
 
-/** Үндсэн SalonDetailPage компонент */
+// --------------------
+// Main SalonDetailPage
+// --------------------
 export default function SalonDetailPage() {
     const params = useParams() as { id?: string };
     const [salon, setSalon] = useState<Salon | null>(null);
@@ -353,28 +407,28 @@ export default function SalonDetailPage() {
     const phoneNumber = "+97694641031";
     const shareUrl = `http://localhost:3000/salons/${params.id}`;
 
-    // 1) Салоны мэдээлэл болон үйлчилгээг нь татах
+    // 1) Load the salon & services
     useEffect(() => {
         if (!params.id) return;
         (async () => {
             try {
                 const salonRes = await axios.get<Salon>(
-                    `http://68.183.191.149/api/salons/${params.id}`
+                    `http://localhost:5001/api/salons/${params.id}`
                 );
                 setSalon(salonRes.data);
 
                 const servicesRes = await axios.get<Service[]>(
-                    `http://68.183.191.149/api/services/salon/${params.id}`
+                    `http://localhost:5001/api/services/salon/${params.id}`
                 );
                 setServices(servicesRes.data);
             } catch (err) {
-                console.error("Салон болон үйлчилгээ уншихад алдаа гарлаа:", err);
+                console.error("Салон/үйлчилгээ уншихад алдаа:", err);
                 setError("Салон болон үйлчилгээ уншихад алдаа гарлаа.");
             }
         })();
     }, [params.id]);
 
-    // 2) Хуваалцах логик
+    // 2) Share logic
     const handleShare = async () => {
         try {
             if (navigator.share) {
@@ -392,17 +446,17 @@ export default function SalonDetailPage() {
         }
     };
 
-    // 3) Захиалгын popup нээх/хаах
+    // 3) Popup open/close
     function openPopup(svc: Service) {
         setSelectedService(svc);
         setShowPopup(true);
     }
     function closePopup() {
-        setShowPopup(false);
         setSelectedService(null);
+        setShowPopup(false);
     }
 
-    // 4) Алдааны байдал эсвэл ачаалж буй байдал
+    // 4) Handle error or loading
     if (error) {
         return (
             <div className="flex min-h-screen bg-white">
@@ -422,17 +476,19 @@ export default function SalonDetailPage() {
         );
     }
 
-    // 5) Байршлын Google Map линк
+    // 5) Map link
     const googleMapsLink =
         salon.lat != null && salon.lng != null
             ? `https://maps.google.com/?q=${salon.lat},${salon.lng}`
             : `https://maps.google.com/?q=${encodeURIComponent(salon.location)}`;
 
-    // Экран руу рэндэрлэх хэсэг
+    // --------------------
+    // Render main page
+    // --------------------
     return (
         <div className="flex min-h-screen bg-white">
             <main className="flex-1 mx-auto max-w-5xl px-4 sm:px-6 py-6">
-                {/* Хавтасны зураг */}
+                {/* Cover image */}
                 {salon.coverImage && (
                     <div className="h-60 bg-gray-200 overflow-hidden mb-6 rounded-md">
                         <img
@@ -443,7 +499,7 @@ export default function SalonDetailPage() {
                     </div>
                 )}
 
-                {/* Салоны үндсэн мэдээлэл ба Хуваалцах товч */}
+                {/* Salon header & share button */}
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between mb-4">
                     <div className="flex items-start gap-3">
                         <div className="h-20 w-20 bg-white rounded-full overflow-hidden border border-gray-300">
@@ -461,9 +517,7 @@ export default function SalonDetailPage() {
                             <h1 className="text-2xl font-bold text-neutral-900">{salon.name}</h1>
                             <p className="mt-1 text-sm text-gray-500">{salon.location}</p>
                             {salon.about && (
-                                <p className="mt-2 text-sm text-gray-600 max-w-prose">
-                                    {salon.about}
-                                </p>
+                                <p className="mt-2 text-sm text-gray-600 max-w-prose">{salon.about}</p>
                             )}
                         </div>
                     </div>
@@ -486,7 +540,7 @@ export default function SalonDetailPage() {
                     </div>
                 </div>
 
-                {/* Үйлчилгээний жагсаалт */}
+                {/* Services list */}
                 {services.length === 0 ? (
                     <p className="text-sm text-gray-500">Үйлчилгээ олдсонгүй.</p>
                 ) : (
@@ -513,7 +567,7 @@ export default function SalonDetailPage() {
                     </ul>
                 )}
 
-                {/* Газрын зураг руу үсрэх линк */}
+                {/* Map link */}
                 <div className="mt-4">
                     <a
                         href={googleMapsLink}
@@ -526,7 +580,7 @@ export default function SalonDetailPage() {
                 </div>
             </main>
 
-            {/* Захиалга хийх popup */}
+            {/* Booking popup */}
             {showPopup && selectedService && (
                 <BookingPopup service={selectedService} onClose={closePopup} />
             )}
