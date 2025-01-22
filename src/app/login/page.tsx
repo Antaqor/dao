@@ -18,7 +18,7 @@ export default function LoginPage() {
 
         try {
             // Express сервер рүү хүсэлт илгээнэ
-            const res = await axios.post("http://localhost:5001/api/auth/login", {
+            const res = await axios.post("https://backend.foru.mn/api/auth/login", {
                 username,
                 password,
             });

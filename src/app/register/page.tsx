@@ -26,7 +26,7 @@ export default function UserRegisterPage() {
         setError("");
         try {
             const response = await axios.post<RegisterResponse>(
-                "http://localhost:5001/api/auth/register",
+                "https://backend.foru.mn/api/auth/register",
                 {
                     username,
                     phoneNumber,

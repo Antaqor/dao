@@ -259,7 +259,7 @@ import AllSalonsCarousel from "../app/components/AllSalonsCarousel";
 /* -------------------------------------------
    7) HomePage Component
 ------------------------------------------- */
-const BASE_URL = "http://localhost:5001";
+const BASE_URL = "https://backend.foru.mn";
 
 export default function HomePage() {
     // States for categories/services

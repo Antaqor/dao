@@ -32,7 +32,7 @@ export default function UserProfilePage() {
         }
 
         axios
-            .get("http://localhost:5001/api/auth/profile", {
+            .get("https://backend.foru.mn/api/auth/profile", {
                 headers: { Authorization: `Bearer ${token}` },
             })
             .then((res) => {

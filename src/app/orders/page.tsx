@@ -97,7 +97,7 @@ export default function ClientAppointmentsPage() {
 
                 // Та өөрийн бодит API endpoint-аа энд ашиглана
                 const res = await axios.get<AppointmentData[]>(
-                    "http://localhost:5001/api/appointments",
+                    "https://backend.foru.mn/api/appointments",
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }

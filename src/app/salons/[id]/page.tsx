@@ -104,7 +104,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
 
         axios
             .get<{ times: string[] }[]>(
-                `http://localhost:5001/api/services/${service._id}/availability`,
+                `https://backend.foru.mn/api/services/${service._id}/availability`,
                 { params: { date: dateStr } }
             )
             .then((res) => {
@@ -135,7 +135,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
 
             // Create QPay invoice for 500₮
             const invoiceRes = await axios.post(
-                "http://localhost:5001/api/payments/create-invoice",
+                "https://backend.foru.mn/api/payments/create-invoice",
                 {
                     invoiceCode: "FORU_INVOICE",
                     amount: 50,
@@ -171,7 +171,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
 
         try {
             const checkRes = await axios.post(
-                "http://localhost:5001/api/payments/check-invoice",
+                "https://backend.foru.mn/api/payments/check-invoice",
                 { invoiceId }
             );
 
@@ -221,7 +221,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
         try {
             // Either consume the response or remove it
             const { data } = await axios.post(
-                "http://localhost:5001/api/appointments",
+                "https://backend.foru.mn/api/appointments",
                 {
                     serviceId: service._id,
                     date: dateStr,
@@ -253,7 +253,7 @@ function BookingPopup({ service, onClose }: BookingPopupProps) {
     // --------------------
     async function handleScheduleReminder(appointmentDate: Date) {
         try {
-            await axios.post("http://localhost:5001/api/notifications/schedule", {
+            await axios.post("https://backend.foru.mn/api/notifications/schedule", {
                 appointmentDate,
             });
             console.log("Push мэдэгдлийг амжилттай төлөвлөлөө!");
@@ -413,12 +413,12 @@ export default function SalonDetailPage() {
         (async () => {
             try {
                 const salonRes = await axios.get<Salon>(
-                    `http://localhost:5001/api/salons/${params.id}`
+                    `https://backend.foru.mn/api/salons/${params.id}`
                 );
                 setSalon(salonRes.data);
 
                 const servicesRes = await axios.get<Service[]>(
-                    `http://localhost:5001/api/services/salon/${params.id}`
+                    `https://backend.foru.mn/api/services/salon/${params.id}`
                 );
                 setServices(servicesRes.data);
             } catch (err) {
