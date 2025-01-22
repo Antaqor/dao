@@ -35,7 +35,8 @@
     "react-time-picker": "^7.0.0",
     "stripe": "^17.5.0",
     "swiper": "^11.1.15",
-    "tailwind-scrollbar-hide": "^2.0.0"
+    "tailwind-scrollbar-hide": "^2.0.0",
+    "twilio": "^5.4.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
